@@ -77,6 +77,24 @@
   }
 }
 
+/*
+ * Z-index scale (Tailwind arbitrary values, e.g. z-[200], used in components):
+ *
+ *   10   floating panel chrome (labels, action buttons inside panels)
+ *   50   app header / floating canvas buttons
+ *   80   auth prompt banner
+ *   100  credit warning banner, settings page
+ *   150  credit zero-balance backdrop
+ *   200  modals (modal-backdrop, ChatModal, etc.)
+ *   300  context menus
+ *   400  teleported dropdowns (ModelDropdown)
+ *   450  upgrade popovers (UpgradePopover)
+ *   500  onboarding tooltips
+ *   600  text highlight popover
+ *   700  loading overlay
+ *   800  toasts — always on top
+ */
+
 /* Component Classes - Modern Design Tool Aesthetic */
 
 /* Button */
@@ -310,16 +328,6 @@
   background: var(--color-error-bg);
   border: 1px solid var(--color-error);
   color: var(--color-error);
-}
-
-/* Loading */
-.loading {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
 }
 
 /* Scrollbar Styling */

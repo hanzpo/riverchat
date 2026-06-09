@@ -3,6 +3,53 @@ import type { UserProfile } from '../services/auth'
 
 let isInitialized = false
 
+// Global error listeners are registered at most once per page load,
+// even if initialization is somehow re-entered.
+let errorListenersRegistered = false
+let onWindowError: ((event: ErrorEvent) => void) | null = null
+let onUnhandledRejection: ((event: PromiseRejectionEvent) => void) | null = null
+
+function registerErrorListeners() {
+  if (errorListenersRegistered || typeof window === 'undefined') {
+    return
+  }
+
+  onWindowError = (event) => {
+    captureException(event.error || new Error(event.message), {
+      type: 'uncaught_error',
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+    })
+  }
+
+  onUnhandledRejection = (event) => {
+    captureException(event.reason, {
+      type: 'unhandled_rejection',
+    })
+  }
+
+  window.addEventListener('error', onWindowError)
+  window.addEventListener('unhandledrejection', onUnhandledRejection)
+  errorListenersRegistered = true
+}
+
+/** Remove the global error listeners registered by initPostHog (e.g. in tests). */
+export function teardownPostHogErrorTracking() {
+  if (!errorListenersRegistered || typeof window === 'undefined') {
+    return
+  }
+  if (onWindowError) {
+    window.removeEventListener('error', onWindowError)
+    onWindowError = null
+  }
+  if (onUnhandledRejection) {
+    window.removeEventListener('unhandledrejection', onUnhandledRejection)
+    onUnhandledRejection = null
+  }
+  errorListenersRegistered = false
+}
+
 export function initPostHog() {
   if (isInitialized) {
     return
@@ -31,23 +78,8 @@ export function initPostHog() {
       element_allowlist: [], // Allow all elements by default
     },
     loaded: () => {
-      // Setup global error tracking
-      if (typeof window !== 'undefined') {
-        window.addEventListener('error', (event) => {
-          captureException(event.error || new Error(event.message), {
-            type: 'uncaught_error',
-            filename: event.filename,
-            lineno: event.lineno,
-            colno: event.colno,
-          })
-        })
-
-        window.addEventListener('unhandledrejection', (event) => {
-          captureException(event.reason, {
-            type: 'unhandled_rejection',
-          })
-        })
-      }
+      // Setup global error tracking (idempotent)
+      registerErrorListeners()
 
       console.log('PostHog initialized successfully')
     },

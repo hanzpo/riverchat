@@ -1,5 +1,14 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 flex flex-col z-[200]" style="background: var(--color-background);">
+  <div
+    v-if="isOpen"
+    ref="modalEl"
+    tabindex="-1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="chat-modal-title"
+    class="fixed inset-0 flex flex-col z-[200]"
+    style="background: var(--color-background);"
+  >
     <!-- Floating Back Button -->
     <button
       @click="emit('close')"
@@ -15,7 +24,7 @@
 
     <!-- Floating Title Label -->
     <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-10 px-4 py-2 rounded-lg shadow-lg" style="background: var(--color-background-secondary); border: 1px solid var(--color-border);">
-      <h1 class="text-sm font-semibold" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+      <h1 id="chat-modal-title" class="text-sm font-semibold" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
         {{ isNewRootMode ? 'New Conversation' : 'Chat History' }}
       </h1>
     </div>
@@ -28,7 +37,7 @@
     </div>
 
     <!-- Messages -->
-    <div ref="messagesContainer" class="flex-1 overflow-y-auto pt-16">
+    <div ref="messagesContainer" role="log" aria-live="polite" class="flex-1 overflow-y-auto pt-16">
       <!-- Empty state -->
       <div v-if="path.length === 0 && !isNewRootMode" class="flex items-center justify-center h-full px-5 py-10">
         <p class="text-sm text-center font-medium" style="color: var(--color-text-tertiary);">
@@ -132,164 +141,29 @@
     <!-- Input Area (centered like ChatGPT/Claude) -->
     <div style="background: var(--color-background);">
       <div class="max-w-3xl mx-auto px-4 py-4">
-        <!-- Resend interface when user node is selected -->
-        <div v-if="!canSend && !isNewRootMode && path.length > 0 && selectedUserMessage" class="py-4">
-          <div class="mb-2 flex items-center gap-1.5 flex-wrap">
-            <button
-              @click="handleWebSearchClick($event)"
-              class="flex items-center justify-center rounded-lg transition-all"
-              :class="{ 'hover:opacity-80': canEnableWebSearch, 'cursor-pointer opacity-50 hover:opacity-70': !canEnableWebSearch }"
-              :style="'width: 20px; height: 20px; background: transparent; cursor: pointer;'"
-              :title="canEnableWebSearch ? (webSearchEnabled ? 'Web search enabled' : 'Web search disabled') : 'Upgrade to use web search'"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="webSearchEnabled && canEnableWebSearch ? 'color: var(--color-primary);' : 'color: var(--color-text-tertiary);'">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-            </button>
-            <div v-for="(modelId, index) in selectedModelIds" :key="index" class="flex items-center gap-0.5">
-              <ModelDropdown
-                :selected-model-id="modelId"
-                :available-models="subscription.availableModels.value"
-                @select="(id: string) => handleModelSelect(index, id)"
-              />
-              <button
-                v-if="selectedModelIds.length > 1"
-                @click="removeModelSlot(index)"
-                class="p-0.5 rounded hover:bg-white/10 transition-colors"
-                style="color: var(--color-text-tertiary);"
-                title="Remove model"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <button
-              v-if="selectedModelIds.length < subscription.maxModelsPerPrompt.value"
-              @click="addModelSlot"
-              class="flex items-center justify-center w-6 h-6 rounded-md hover:bg-white/10 transition-colors"
-              style="color: var(--color-text-tertiary); border: 1px dashed var(--color-border);"
-              title="Add model"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
-          </div>
-
-          <div class="mb-3 p-4 rounded-lg" style="background: var(--color-background-secondary); border: 1px solid var(--color-border);">
-            <div class="text-sm leading-relaxed break-words whitespace-pre-wrap" style="color: var(--color-text-tertiary); opacity: 0.6;">
-              {{ selectedUserMessage.content }}
-            </div>
-          </div>
-
-          <div class="flex justify-end">
-            <button
-              @click="handleResend"
-              :disabled="selectedModelIds.length === 0 || isSending"
-              class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium text-sm"
-              :style="(selectedModelIds.length === 0 || isSending)
-                ? 'background: var(--color-border); color: var(--color-text-tertiary); cursor: not-allowed;'
-                : 'background: var(--color-primary); color: white; cursor: pointer;'"
-            >
-              <div v-if="isSending" class="loading-spinner-small"></div>
-              <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                <path d="M21 3v5h-5"/>
-                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                <path d="M3 21v-5h5"/>
-              </svg>
-              <span>Resend</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Normal input area -->
-        <div v-else>
-          <div v-if="branchContext.text" class="mb-4 p-3.5 bg-accent/10 border border-accent/30 rounded-lg animate-slide-in">
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <div class="flex items-center gap-2">
-                <GitBranch :size="16" class="text-accent" />
-                <span class="text-xs font-bold text-accent uppercase tracking-wider">Selected Context</span>
-              </div>
-              <button
-                @click="clearBranchContext"
-                class="transition-colors text-xs font-bold px-2 py-1 rounded-md hover:bg-white/10"
-                style="color: var(--color-text-tertiary);"
-                title="Clear context"
-              >
-                <X :size="16" />
-              </button>
-            </div>
-            <div class="text-sm italic pl-3 border-l-2 border-accent/50 max-h-24 overflow-y-auto" style="color: var(--color-text-secondary);">
-              "{{ branchContext.text }}"
-            </div>
-          </div>
-
-          <div class="mb-2 flex items-center gap-1.5 flex-wrap">
-            <button
-              @click="handleWebSearchClick($event)"
-              class="flex items-center justify-center rounded-lg transition-all"
-              :class="{ 'hover:opacity-80': canEnableWebSearch, 'cursor-pointer opacity-50 hover:opacity-70': !canEnableWebSearch }"
-              :style="'width: 20px; height: 20px; background: transparent; cursor: pointer;'"
-              :title="canEnableWebSearch ? (webSearchEnabled ? 'Web search enabled' : 'Web search disabled') : 'Upgrade to use web search'"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="webSearchEnabled && canEnableWebSearch ? 'color: var(--color-primary);' : 'color: var(--color-text-tertiary);'">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-            </button>
-            <div v-for="(modelId, index) in selectedModelIds" :key="index" class="flex items-center gap-0.5">
-              <ModelDropdown
-                :selected-model-id="modelId"
-                :available-models="subscription.availableModels.value"
-                @select="(id: string) => handleModelSelect(index, id)"
-              />
-              <button
-                v-if="selectedModelIds.length > 1"
-                @click="removeModelSlot(index)"
-                class="p-0.5 rounded hover:bg-white/10 transition-colors"
-                style="color: var(--color-text-tertiary);"
-                title="Remove model"
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <button
-              v-if="selectedModelIds.length < subscription.maxModelsPerPrompt.value"
-              @click="addModelSlot"
-              class="flex items-center justify-center w-6 h-6 rounded-md hover:bg-white/10 transition-colors"
-              style="color: var(--color-text-tertiary); border: 1px dashed var(--color-border);"
-              title="Add model"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            </button>
-          </div>
-
-          <div class="flex items-end gap-3">
-            <textarea
-              ref="textareaRef"
-              v-model="inputText"
-              class="textarea-material text-sm flex-1"
-              :placeholder="branchContext.text ? 'Ask about the selected text...' : 'Type your message...'"
-              rows="1"
-              style="resize: none; min-height: 44px; max-height: 200px;"
-              @input="autoResizeTextarea"
-              @keydown="handleKeydown"
-            ></textarea>
-
-            <button
-              @click="handleSend"
-              :disabled="!inputText.trim() || !canSend || selectedModelIds.length === 0 || isSending"
-              class="flex items-center justify-center rounded-lg transition-all"
-              :style="(!inputText.trim() || !canSend || selectedModelIds.length === 0 || isSending)
-                ? 'width: 44px; height: 44px; background: var(--color-border); cursor: not-allowed;'
-                : 'width: 44px; height: 44px; background: var(--color-primary); cursor: pointer;'"
-            >
-              <div v-if="isSending" class="loading-spinner-small"></div>
-              <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: white;">
-                <path d="M12 19V5M5 12l7-7 7 7"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <ChatInputArea
+          ref="inputArea"
+          v-model="inputText"
+          :resend-mode="resendMode"
+          :selected-user-message="selectedUserMessage"
+          :selected-model-ids="selectedModelIds"
+          :available-models="subscription.availableModels.value"
+          :max-models-per-prompt="subscription.maxModelsPerPrompt.value"
+          :web-search-enabled="webSearchEnabled"
+          :can-enable-web-search="canEnableWebSearch"
+          :can-send="canSend"
+          :is-sending="!!isSending"
+          :branch-context-text="branchContext.text"
+          @web-search-click="handleWebSearchClick"
+          @model-select="handleModelSelect"
+          @add-model="addModelSlot"
+          @remove-model="removeModelSlot"
+          @send="handleSend"
+          @resend="handleResend"
+          @keydown="handleKeydown"
+          @textarea-input="autoResizeTextarea"
+          @clear-branch-context="clearBranchContext"
+        />
       </div>
     </div>
 
@@ -315,18 +189,18 @@
 </template>
 
 <script setup lang="ts">
-import { watch, nextTick } from 'vue';
-import type { MessageNode, Settings } from '../types';
-import { User, Bot, GitBranch, AlertTriangle, X } from 'lucide-vue-next';
+import { ref, computed, watch, watchEffect, nextTick } from 'vue';
+import type { MessageNode, Settings, LLMModel } from '../types';
+import { User, Bot, GitBranch, AlertTriangle } from 'lucide-vue-next';
 import { renderMarkdown, formatTime, getBranchCount } from '../utils/chat';
 import TextHighlightPopover from './TextHighlightPopover.vue';
-import ModelDropdown from './ModelDropdown.vue';
+import ChatInputArea from './ChatInputArea.vue';
 import UpgradePopover from './UpgradePopover.vue';
-import { useChatPanel } from '../composables/useChatPanel';
+import { useChatPanel, type ChatPanelUser } from '../composables/useChatPanel';
+import { useModalA11y } from '../composables/useModalA11y';
 import { usePostHog } from '../composables/usePostHog';
 
 const chatModalAnalytics = usePostHog();
-import type { User as FirebaseUser } from 'firebase/auth';
 
 interface Props {
   isOpen: boolean;
@@ -336,20 +210,23 @@ interface Props {
   allNodes?: Record<string, MessageNode>;
   settings?: Settings;
   isSending?: boolean;
-  currentUser?: FirebaseUser | null;
+  currentUser?: ChatPanelUser | null;
 }
 
 interface Emits {
   (e: 'close'): void;
-  (e: 'send', content: string, models: any[], webSearchEnabled: boolean): void;
+  (e: 'send', content: string, models: LLMModel[], webSearchEnabled: boolean): void;
   (e: 'node-select', nodeId: string): void;
-  (e: 'branch-from-text', nodeId: string, highlightedText: string, elaborationPrompt: string, models: any[], webSearchEnabled: boolean): void;
+  (e: 'branch-from-text', nodeId: string, highlightedText: string, elaborationPrompt: string, models: LLMModel[], webSearchEnabled: boolean): void;
   (e: 'chat-model-changed', modelIds: string[]): void;
-  (e: 'resend', userNodeId: string, models: any[], webSearchEnabled: boolean): void;
+  (e: 'resend', userNodeId: string, models: LLMModel[], webSearchEnabled: boolean): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 const {
   inputText,
@@ -385,6 +262,17 @@ const {
   },
   { textareaMinHeight: '44px' }
 );
+
+// Whether to show the resend UI instead of the normal input
+const resendMode = computed(() =>
+  !canSend.value && !props.isNewRootMode && props.path.length > 0 && !!selectedUserMessage.value
+);
+
+// Wire the input area's textarea element into the chat panel composable
+const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
+watchEffect(() => {
+  textareaRef.value = inputArea.value?.textarea ?? null;
+});
 
 // Autofocus textarea and scroll to bottom when modal opens
 watch(

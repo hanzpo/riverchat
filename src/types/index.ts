@@ -81,6 +81,15 @@ export interface River {
   rootNodeId: string | null;
 }
 
+/**
+ * Lightweight river list entry stored in the rivers-metadata cache.
+ * Same as River but without the (potentially large) node data — it carries a
+ * nodeCount instead.
+ */
+export interface RiverMetadata extends Omit<River, 'nodes'> {
+  nodeCount: number;
+}
+
 export interface RiverChatData {
   rivers: River[];
   settings: Settings;
@@ -109,8 +118,14 @@ export interface VueFlowEdge {
   style?: Record<string, string>;
 }
 
-/** Default model ID for new users */
-export const DEFAULT_MODEL_ID = 'deepseek/deepseek-v3.2';
+/**
+ * Default model ID for new users: a cheap, fast budget model that is
+ * accessible on the free tier. Can be overridden via the
+ * VITE_DEFAULT_MODEL_ID env var; the value must be an ID present in the
+ * model catalog (src/config/models.ts).
+ */
+export const DEFAULT_MODEL_ID: string =
+  import.meta.env.VITE_DEFAULT_MODEL_ID || 'deepseek/deepseek-v3.2';
 
 /** Resolve model IDs to full LLMModel objects */
 export function resolveModelIds(ids: string[], availableModels: LLMModel[]): LLMModel[] {

@@ -67,14 +67,22 @@ export function useRiverChat() {
     await FirestoreStorageService.saveSettings(newSettings);
   }, 2000); // Save at most once per 2 seconds
 
-  // Save current river whenever it changes (debounced, skip during initialization)
+  // Save current river whenever it changes (debounced, skip during initialization).
+  // NOTE: this deep watch traverses the whole river (every node, including
+  // streaming content) on each flush. `flush: 'post'` batches the traversal
+  // to once per render flush instead of once per sync mutation. A fuller fix
+  // would replace the deep watch with explicit save triggers (or a version
+  // counter bumped by mutation helpers), but that changes the save model and
+  // is intentionally not done here.
   watch(currentRiver, (river) => {
     if (river && !isInitializing.value) {
       debouncedSaveRiver(river);
     }
-  }, { deep: true });
+  }, { deep: true, flush: 'post' });
 
-  // Save settings whenever they change (but skip during initialization to preserve cloud data)
+  // Save settings whenever they change (but skip during initialization to preserve cloud data).
+  // Deep watch kept for correctness (settings are mutated in place in several
+  // places); flush: 'post' batches the traversal per render flush.
   watch(settings, async (newSettings) => {
     if (isInitializing.value) {
       console.log('[useRiverChat] Skipping auto-save during initialization');
@@ -82,7 +90,7 @@ export function useRiverChat() {
     }
     // Use debounced save to reduce writes
     debouncedSaveSettings(newSettings);
-  }, { deep: true });
+  }, { deep: true, flush: 'post' });
 
   // Refresh rivers list
   async function refreshRivers(forceRefresh: boolean = false): Promise<void> {

@@ -203,8 +203,15 @@
 
     <!-- Edit & Resubmit Modal -->
     <div v-if="editConfirmation.isOpen" class="modal-backdrop z-[200]" @click.self="editConfirmation.isOpen = false">
-      <div class="modal-content w-[550px] p-7">
-        <h3 class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+      <div
+        ref="editModalEl"
+        tabindex="-1"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-resubmit-modal-title"
+        class="modal-content w-[550px] p-7"
+      >
+        <h3 id="edit-resubmit-modal-title" class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
           Edit and Resubmit
         </h3>
         <p class="text-sm leading-relaxed mb-4 font-medium" style="color: var(--color-text-secondary);">
@@ -294,8 +301,8 @@
       @upgrade-to="handleCreditWarningUpgrade"
     />
 
-    <!-- Toast Notification -->
-    <div v-if="toast.visible && !showSettings" class="toast z-[500]" :class="`toast-${toast.type}`">
+    <!-- Toast Notification (z-index scale documented in style.css) -->
+    <div v-if="toast.visible && !showSettings" class="toast z-[800]" :class="`toast-${toast.type}`">
       {{ toast.message }}
     </div>
 
@@ -309,15 +316,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick, defineAsyncComponent } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, defineAsyncComponent } from 'vue';
 import { useRiverChat } from './composables/useRiverChat';
 import { usePostHog } from './composables/usePostHog';
 import { useOnboardingTour } from './composables/useOnboardingTour';
+import { useModals } from './composables/useModals';
+import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts';
+import { useModalA11y } from './composables/useModalA11y';
+import { copyToClipboard } from './composables/useClipboard';
+import type { ChatPanelUser } from './composables/useChatPanel';
 import type { MessageNode, LLMModel } from './types';
 import { resolveModelIds, DEFAULT_MODEL_ID } from './types';
 import { Folder, Search, HelpCircle, Settings, Plus, User as UserIcon } from 'lucide-vue-next';
 import { AuthService } from './services/auth';
-import type { User } from 'firebase/auth';
 import { auth } from './config/firebase';
 
 // Critical components loaded immediately
@@ -365,22 +376,25 @@ const {
   initialize,
 } = useRiverChat();
 
-// Modal states
-const showWelcome = ref(false);
-const showSettings = ref(false);
-const showRiverDashboard = ref(false);
-const showMessageViewer = ref(false);
-const showHelp = ref(false);
-const showChatModal = ref(false);
-const showAuth = ref(false);
-const showCreateRiver = ref(false);
+// Modal states (open/close toggles live in the useModals composable)
+const modals = useModals();
+const {
+  showWelcome,
+  showSettings,
+  showRiverDashboard,
+  showMessageViewer,
+  showHelp,
+  showChatModal,
+  showAuth,
+  showCreateRiver,
+  showOnboarding,
+} = modals;
 const pendingMessage = ref<{ content: string; models: LLMModel[]; webSearchEnabled: boolean } | null>(null);
 const viewingMessage = ref<MessageNode | null>(null);
 const isNewRootMode = ref(false);
 const hasMultipleNodesSelected = ref(false);
 const hasInitialized = ref(false);
 const showMinimap = ref(true);
-const showOnboarding = ref(false);
 const onboardingVariant = ref<string>('control');
 
 // Onboarding tour
@@ -390,8 +404,10 @@ const tour = useOnboardingTour();
 const authPromptMessage = ref('');
 const showAuthPrompt = ref(false);
 
-// Authentication state
-const currentUser = ref<User | null>(null);
+// Authentication state. `ChatPanelUser` is the minimal user shape the UI
+// needs; a real Firebase `User` satisfies it, and so does the optimistic
+// cached-auth state restored before Firebase Auth is ready.
+const currentUser = ref<ChatPanelUser | null>(null);
 const isAuthenticating = ref(false);
 
 // Local loading states for specific operations
@@ -401,7 +417,7 @@ const isRiverOperationLoading = ref(false);
 // Resizable chat panel
 const chatPanelWidth = ref(400);
 const chatPanel = ref<HTMLElement | null>(null);
-const graphCanvas = ref<any>(null);
+const graphCanvas = ref<InstanceType<typeof GraphCanvas> | null>(null);
 
 // Confirmation dialogs
 const deleteConfirmation = ref({
@@ -420,6 +436,8 @@ const editConfirmation = ref({
   content: '',
 });
 const editTextarea = ref<HTMLTextAreaElement | null>(null);
+const editModalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => editConfirmation.value.isOpen, editModalEl);
 
 // Toast notifications
 const toast = ref({
@@ -464,45 +482,54 @@ watch(() => currentRiver.value, (river) => {
 function startResize(e: MouseEvent) {
   e.preventDefault();
   if (!chatPanel.value) return;
-  
+
+  // The resize handle is hidden by CSS below 768px (see <style> below);
+  // guard against synthetic events triggering the dead path.
+  if (window.innerWidth <= 768) return;
+
   // Add styles to prevent text selection and improve performance during drag
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
-  
+
   const panelElement = chatPanel.value;
-  
+
   const onMouseMove = (moveEvent: MouseEvent) => {
     // Calculate new width from right edge
     const newWidth = window.innerWidth - moveEvent.clientX;
-    
+
     // Clamp between min and max widths
     const clampedWidth = Math.max(300, Math.min(800, newWidth));
-    
+
     // Use direct DOM manipulation for instant response
     panelElement.style.width = `${clampedWidth}px`;
-    
+
     // Also update reactive state so floating buttons move in real-time
     chatPanelWidth.value = clampedWidth;
   };
-  
-  const onMouseUp = () => {
+
+  const stopResize = () => {
     // Restore body styles
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
-    
+
     // Now update the reactive state once at the end
     const finalWidth = parseInt(panelElement.style.width, 10);
-    chatPanelWidth.value = finalWidth;
-    
-    // Save to session storage
-    sessionStorage.setItem('chatPanelWidth', finalWidth.toString());
-    
+    if (!isNaN(finalWidth)) {
+      chatPanelWidth.value = finalWidth;
+      // Save to session storage
+      sessionStorage.setItem('chatPanelWidth', finalWidth.toString());
+    }
+
     document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
+    document.removeEventListener('mouseup', stopResize);
+    window.removeEventListener('blur', stopResize);
   };
-  
+
   document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('mouseup', stopResize);
+  // Ensure cleanup runs even if the mouse button is released outside the
+  // window (mouseup never fires) and the window loses focus.
+  window.addEventListener('blur', stopResize);
 }
 
 // Initialize app
@@ -516,7 +543,7 @@ onMounted(async () => {
       uid: cachedAuth.uid,
       email: cachedAuth.email,
       displayName: cachedAuth.displayName,
-    } as any;
+    };
   }
 
   // Wait for Firebase Auth to restore any persisted session before
@@ -634,19 +661,11 @@ onMounted(async () => {
     window.history.replaceState({}, '', window.location.pathname);
   }
 
-  // Setup keyboard shortcuts
-  setupKeyboardShortcuts();
+  // Setup keyboard shortcuts (unregistered automatically on unmount)
+  keyboardShortcuts.register();
 
   // Set dark theme on body
   document.body.className = 'dark-theme';
-});
-
-// Cleanup keyboard listener on unmount
-onUnmounted(() => {
-  if (keyboardHandler) {
-    window.removeEventListener('keydown', keyboardHandler);
-    keyboardHandler = null;
-  }
 });
 
 // Credit warning handler
@@ -659,6 +678,10 @@ function handleCreditWarningUpgrade(tier: 'pro' | 'max') {
 async function handleFirstMessage(content: string) {
   showOnboarding.value = false;
   analytics.capture('first_message_sent', { source: 'onboarding_modal' });
+
+  // Let the modal close and any pending state updates flush before we
+  // read currentRiver, so we can't race the auto-created river.
+  await nextTick();
 
   // If no river exists yet (shouldn't happen since we auto-create, but safety)
   if (!currentRiver.value) {
@@ -864,9 +887,14 @@ async function handleSendMessage(content: string, models: LLMModel[], webSearchE
     updateSettings({ ...settings.value, ...tour.getSettingsUpdate() });
     checkAuthPromptMilestones();
 
-    // Generate AI responses for all selected models in parallel
-    const promises = models.map(model => generateAIResponse(userNode.id, model, webSearchEnabled));
-    await Promise.all(promises);
+    // Generate AI responses for all selected models in parallel.
+    // Errors are isolated per model so one failure doesn't affect siblings;
+    // streaming errors already surface on the node itself, and pre-stream
+    // rejections are surfaced via toast.
+    const results = await Promise.allSettled(
+      models.map(model => generateAIResponse(userNode.id, model, webSearchEnabled))
+    );
+    notifyGenerationFailures(results, 'Failed to send message');
 
     // Onboarding tour: record AI response milestone
     tour.recordAIResponse();
@@ -874,6 +902,16 @@ async function handleSendMessage(content: string, models: LLMModel[], webSearchE
     showToast(error instanceof Error ? error.message : 'Failed to send message', 'error');
   } finally {
     isSendingMessage.value = false;
+  }
+}
+
+// Surface per-model generation failures without letting one model's
+// failure interrupt its siblings (used with Promise.allSettled results).
+function notifyGenerationFailures(results: PromiseSettledResult<void>[], fallbackMessage: string) {
+  const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+  if (failures.length > 0) {
+    const reason = failures[0]!.reason;
+    showToast(reason instanceof Error ? reason.message : fallbackMessage, 'error');
   }
 }
 
@@ -889,8 +927,10 @@ async function handleResend(userNodeId: string, models: LLMModel[], webSearchEna
   isSendingMessage.value = true;
   try {
     // Generate AI responses directly from the existing user node (no new user node created)
-    const promises = models.map(model => generateAIResponse(userNodeId, model, webSearchEnabled));
-    await Promise.all(promises);
+    const results = await Promise.allSettled(
+      models.map(model => generateAIResponse(userNodeId, model, webSearchEnabled))
+    );
+    notifyGenerationFailures(results, 'Failed to resend message');
   } catch (error) {
     showToast(error instanceof Error ? error.message : 'Failed to resend message', 'error');
   } finally {
@@ -1048,12 +1088,12 @@ function confirmDeleteBranchesBatch() {
   hasMultipleNodesSelected.value = false;
 }
 
-function handleCopyMessage(content: string) {
-  navigator.clipboard.writeText(content).then(() => {
+async function handleCopyMessage(content: string) {
+  if (await copyToClipboard(content)) {
     showToast('Message copied to clipboard', 'success');
-  }).catch(() => {
+  } else {
     showToast('Failed to copy to clipboard', 'error');
-  });
+  }
 }
 
 function handleUpdatePosition(nodeId: string, position: { x: number; y: number }) {
@@ -1086,9 +1126,11 @@ async function handleBranchFromText(nodeId: string, highlightedText: string, use
   isSendingMessage.value = true;
   try {
     showToast(`Creating ${models.length} branch${models.length > 1 ? 'es' : ''} with selected context...`, 'info');
-    // Create branches for all selected models in parallel
-    const promises = models.map(model => branchFromText(nodeId, highlightedText, userPrompt, model, webSearchEnabled));
-    await Promise.all(promises);
+    // Create branches for all selected models in parallel (errors isolated per model)
+    const results = await Promise.allSettled(
+      models.map(model => branchFromText(nodeId, highlightedText, userPrompt, model, webSearchEnabled))
+    );
+    notifyGenerationFailures(results, 'Failed to create branch');
   } catch (error) {
     showToast(error instanceof Error ? error.message : 'Failed to create branch', 'error');
   } finally {
@@ -1128,212 +1170,46 @@ function showToast(message: string, type: 'info' | 'success' | 'error' = 'info')
 
 // Check if any modal or overlay is currently open
 function isAnyModalOpen(): boolean {
-  return showSettings.value || showRiverDashboard.value || showMessageViewer.value ||
-         showHelp.value || showChatModal.value || showAuth.value || showWelcome.value ||
-         showCreateRiver.value ||
+  return modals.isAnyOpen() ||
          deleteConfirmation.value.isOpen || editConfirmation.value.isOpen || deleteBatchConfirmation.value.isOpen;
 }
 
-// Keyboard Shortcuts
-let keyboardHandler: ((e: KeyboardEvent) => void) | null = null;
+// Keyboard shortcuts (handler logic lives in useKeyboardShortcuts;
+// registered in onMounted, unregistered automatically on unmount)
+const keyboardShortcuts = useKeyboardShortcuts({
+  modals,
+  deleteConfirmation,
+  editConfirmation,
+  deleteBatchConfirmation,
+  currentRiver,
+  selectedNodeId,
+  isNewRootMode,
+  isAnyModalOpen,
+  selectNode,
+  clearPendingMessage: () => { pendingMessage.value = null; },
+  createRootNode: handleCreateRootNode,
+  branchFrom: handleBranchFrom,
+  regenerate: handleRegenerate,
+  editResubmit: handleEditResubmit,
+  copyMessage: handleCopyMessage,
+  deleteBranch: handleDeleteBranch,
+  viewMessage: (node) => {
+    viewingMessage.value = node;
+    showMessageViewer.value = true;
+  },
+  toggleMinimap: handleToggleMinimap,
+  zoomIn: handleZoomIn,
+  zoomOut: handleZoomOut,
+  zoomReset: handleZoomReset,
+  selectAllNodes: handleSelectAllNodes,
+  focusChatInput,
+  showToast,
+});
 
-function setupKeyboardShortcuts() {
-  keyboardHandler = (e: KeyboardEvent) => {
-    // Check if user is typing in an input/textarea/contenteditable
-    const target = e.target as HTMLElement;
-    const isTyping = target?.tagName === 'INPUT' ||
-                     target?.tagName === 'TEXTAREA' ||
-                     target?.isContentEditable;
-
-    // Escape: Close modals one at a time (always available)
-    if (e.key === 'Escape') {
-      // Close in priority order: confirmation dialogs > chat modal > other modals > settings > chat panel
-      if (deleteConfirmation.value.isOpen) {
-        deleteConfirmation.value.isOpen = false;
-      } else if (editConfirmation.value.isOpen) {
-        editConfirmation.value.isOpen = false;
-      } else if (deleteBatchConfirmation.value.isOpen) {
-        deleteBatchConfirmation.value.isOpen = false;
-      } else if (showChatModal.value) {
-        showChatModal.value = false;
-      } else if (showMessageViewer.value) {
-        showMessageViewer.value = false;
-      } else if (showHelp.value) {
-        showHelp.value = false;
-      } else if (showRiverDashboard.value) {
-        showRiverDashboard.value = false;
-      } else if (showAuth.value) {
-        showAuth.value = false;
-      } else if (showCreateRiver.value) {
-        showCreateRiver.value = false;
-        pendingMessage.value = null;
-      } else if (showWelcome.value) {
-        showWelcome.value = false;
-      } else if (showSettings.value) {
-        showSettings.value = false;
-      } else if (selectedNodeId.value || isNewRootMode.value) {
-        selectNode(null);
-        isNewRootMode.value = false;
-      }
-      return;
-    }
-
-    // Block all other shortcuts when a modal is open
-    if (isAnyModalOpen()) return;
-
-    // Ctrl/Cmd + ?: Show keyboard shortcuts help
-    if ((e.ctrlKey || e.metaKey) && e.key === '?') {
-      e.preventDefault();
-      showHelp.value = true;
-    }
-
-    // Ctrl/Cmd + K: Open rivers dashboard
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      showRiverDashboard.value = true;
-    }
-
-    // Ctrl/Cmd + ,: Open settings
-    if ((e.ctrlKey || e.metaKey) && e.key === ',') {
-      e.preventDefault();
-      showSettings.value = true;
-    }
-
-    // Ctrl/Cmd + N: Create new river
-    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-      e.preventDefault();
-      showRiverDashboard.value = true;
-    }
-
-    // Alt/Option + R: Create new root node
-    if (e.altKey && (e.key === 'r' || e.key === 'R')) {
-      e.preventDefault();
-      if (currentRiver.value) {
-        handleCreateRootNode();
-      }
-    }
-
-    // Ctrl/Cmd + D: Deselect node
-    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-      e.preventDefault();
-      selectNode(null);
-      isNewRootMode.value = false;
-    }
-
-    // Ctrl/Cmd + ]: Toggle chat panel (close if open)
-    if ((e.ctrlKey || e.metaKey) && e.key === ']') {
-      e.preventDefault();
-      if (selectedNodeId.value || isNewRootMode.value) {
-        selectNode(null);
-        isNewRootMode.value = false;
-      }
-    }
-
-    // Ctrl/Cmd + [: Focus chat input
-    if ((e.ctrlKey || e.metaKey) && e.key === '[') {
-      e.preventDefault();
-      const chatInput = document.querySelector('textarea') as HTMLTextAreaElement;
-      if (chatInput) {
-        chatInput.focus();
-      }
-    }
-
-    // Ctrl/Cmd + M: Toggle minimap
-    if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
-      e.preventDefault();
-      handleToggleMinimap();
-    }
-
-    // Ctrl/Cmd + +/=: Zoom in
-    if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '=')) {
-      e.preventDefault();
-      handleZoomIn();
-    }
-
-    // Ctrl/Cmd + -: Zoom out
-    if ((e.ctrlKey || e.metaKey) && e.key === '-') {
-      e.preventDefault();
-      handleZoomOut();
-    }
-
-    // Ctrl/Cmd + 0: Reset zoom
-    if ((e.ctrlKey || e.metaKey) && e.key === '0') {
-      e.preventDefault();
-      handleZoomReset();
-    }
-
-    // Ctrl/Cmd + A: Select all nodes
-    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !isTyping) {
-      e.preventDefault();
-      handleSelectAllNodes();
-    }
-
-    // Ctrl/Cmd + Enter: Send message (when chat input is focused)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && isTyping) {
-      e.preventDefault();
-      // Dispatch custom event that ChatHistory/ChatModal listen for
-      window.dispatchEvent(new CustomEvent('riverchat:send-message'));
-    }
-
-    // Actions that require a selected node
-    if (selectedNodeId.value && currentRiver.value) {
-      const currentNode = currentRiver.value.nodes[selectedNodeId.value];
-
-      // Ctrl/Cmd + B: Branch from selected node
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-        e.preventDefault();
-        handleBranchFrom(selectedNodeId.value);
-        showToast('Branch from this node by sending a new message', 'info');
-      }
-
-      // Ctrl/Cmd + G: Regenerate AI response
-      if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
-        e.preventDefault();
-        if (currentNode?.type === 'ai' && currentNode.parentId) {
-          handleRegenerate(currentNode.parentId);
-        } else {
-          showToast('Can only regenerate AI responses', 'error');
-        }
-      }
-
-      // Ctrl/Cmd + E: Edit & resubmit
-      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-        e.preventDefault();
-        if (currentNode?.type === 'user') {
-          handleEditResubmit(selectedNodeId.value);
-        } else {
-          showToast('Can only edit user messages', 'error');
-        }
-      }
-
-      // Ctrl/Cmd + C: Copy message (only if not typing and no text selected)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !isTyping) {
-        const selectedText = window.getSelection()?.toString();
-        if (!selectedText && currentNode) {
-          e.preventDefault();
-          handleCopyMessage(currentNode.content);
-        }
-        // Otherwise, allow native copy behavior
-      }
-
-      // Ctrl/Cmd + Shift + V: View full message (avoid hijacking native paste)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'V' || e.key === 'v') && !isTyping) {
-        e.preventDefault();
-        if (currentNode) {
-          viewingMessage.value = currentNode;
-          showMessageViewer.value = true;
-        }
-      }
-
-      // Ctrl/Cmd + Delete: Delete branch
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Delete') {
-        e.preventDefault();
-        handleDeleteBranch(selectedNodeId.value);
-      }
-    }
-  };
-
-  window.addEventListener('keydown', keyboardHandler);
+// Focus the chat input textarea (marked with data-chat-input in ChatInputArea)
+function focusChatInput() {
+  const chatInput = document.querySelector<HTMLTextAreaElement>('textarea[data-chat-input]');
+  chatInput?.focus();
 }
 
 // Graph control functions (using exposed Vue Flow API methods)

@@ -1,6 +1,13 @@
 <template>
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="onBackdropClick">
-    <div class="modal-content w-[440px] p-8 text-center">
+    <div
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="welcome-modal-title"
+      class="modal-content w-[440px] p-8 text-center"
+    >
       <!-- Balance hero -->
       <div class="mb-1">
         <div class="text-4xl font-bold mb-1" style="color: var(--color-success); letter-spacing: -0.03em;">
@@ -13,7 +20,7 @@
 
       <div class="my-5" style="border-top: 1px solid var(--color-border);"></div>
 
-      <h1 class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.02em;">
+      <h1 id="welcome-modal-title" class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.02em;">
         Your AI conversations, visualized.
       </h1>
       <p class="text-xs leading-relaxed mb-6" style="color: var(--color-text-secondary);">
@@ -36,6 +43,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useModalA11y } from '../composables/useModalA11y';
+
 interface Props {
   isOpen: boolean;
   canDismiss?: boolean;
@@ -50,6 +60,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<Emits>();
+
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 function onBackdropClick() {
   if (props.canDismiss) {

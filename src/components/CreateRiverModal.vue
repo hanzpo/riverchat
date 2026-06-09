@@ -1,7 +1,14 @@
 <template>
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="emit('close')">
-    <div class="modal-content w-[450px] p-7">
-      <h3 class="text-lg font-semibold mb-3" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+    <div
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-river-modal-title"
+      class="modal-content w-[450px] p-7"
+    >
+      <h3 id="create-river-modal-title" class="text-lg font-semibold mb-3" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
         Create a New River
       </h3>
       <p class="text-sm leading-relaxed mb-4 font-medium" style="color: var(--color-text-secondary);">
@@ -36,6 +43,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
+import { useModalA11y } from '../composables/useModalA11y';
 
 interface Props {
   isOpen: boolean;
@@ -51,6 +59,8 @@ const emit = defineEmits<Emits>();
 
 const riverName = ref('');
 const nameInput = ref<HTMLInputElement | null>(null);
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 // Auto-focus and reset when modal opens
 watch(() => props.isOpen, (open) => {

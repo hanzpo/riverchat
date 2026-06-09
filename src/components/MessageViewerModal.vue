@@ -1,6 +1,13 @@
 <template>
   <div v-if="isOpen && message" class="modal-backdrop z-[200]" @click.self="emit('close')">
-    <div class="modal-content w-[800px] max-h-[80vh] p-8 overflow-y-auto">
+    <div
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Full message"
+      class="modal-content w-[800px] max-h-[80vh] p-8 overflow-y-auto"
+    >
       <!-- Header -->
       <div class="flex justify-between items-start mb-5">
         <div>
@@ -60,6 +67,8 @@
 import { ref, watch, onUnmounted } from 'vue';
 import type { MessageNode } from '../types';
 import { renderMarkdown } from '../utils/chat';
+import { useModalA11y } from '../composables/useModalA11y';
+import { copyToClipboard } from '../composables/useClipboard';
 
 interface Props {
   isOpen: boolean;
@@ -75,6 +84,9 @@ const emit = defineEmits<Emits>();
 
 const copied = ref(false);
 let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 // Reset copied state when modal closes
 watch(() => props.isOpen, (open) => {
@@ -99,19 +111,16 @@ function formatTimestamp(timestamp: number): string {
   return date.toLocaleString();
 }
 
-function handleCopy() {
-  if (props.message) {
-    navigator.clipboard.writeText(props.message.content).then(() => {
-      copied.value = true;
-      if (copyTimeout) clearTimeout(copyTimeout);
-      copyTimeout = setTimeout(() => {
-        copied.value = false;
-        copyTimeout = null;
-      }, 2000);
-    }).catch(() => {
-      // Clipboard API failed silently
-    });
+async function handleCopy() {
+  if (props.message && await copyToClipboard(props.message.content)) {
+    copied.value = true;
+    if (copyTimeout) clearTimeout(copyTimeout);
+    copyTimeout = setTimeout(() => {
+      copied.value = false;
+      copyTimeout = null;
+    }, 2000);
   }
+  // Clipboard API failures are silent (button label simply doesn't change)
 }
 </script>
 

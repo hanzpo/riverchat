@@ -1,9 +1,16 @@
 <template>
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="$emit('close')">
-    <div class="modal-content shortcuts-modal-content">
+    <div
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortcuts-modal-title"
+      class="modal-content shortcuts-modal-content"
+    >
       <div class="modal-header">
-        <h2 class="modal-title">⌨️ Keyboard Shortcuts</h2>
-        <button @click="$emit('close')" class="modal-close-btn">✕</button>
+        <h2 id="shortcuts-modal-title" class="modal-title">⌨️ Keyboard Shortcuts</h2>
+        <button @click="$emit('close')" class="modal-close-btn" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
         <div class="shortcuts-grid">
@@ -189,16 +196,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
+import { useModalA11y } from '../composables/useModalA11y';
 
 interface Props {
   isOpen: boolean;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 defineEmits<{
   (e: 'close'): void;
 }>();
+
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 // Detect OS for correct modifier key display
 const ctrlKey = computed(() => {

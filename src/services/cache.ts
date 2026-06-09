@@ -5,7 +5,7 @@
 
 import type { User } from 'firebase/auth';
 import type { UserProfile } from './auth';
-import type { Settings } from '../types';
+import type { River, RiverMetadata, Settings } from '../types';
 
 const CACHE_KEYS = {
   AUTH_STATE: 'riverchat_auth_cache',
@@ -145,9 +145,9 @@ export class CacheService {
   /**
    * Cache rivers metadata (list of rivers without full node data)
    */
-  static cacheRiversMetadata(rivers: any[]): void {
+  static cacheRiversMetadata(rivers: River[]): void {
     // Store only metadata (id, name, dates) not full nodes
-    const metadata = rivers.map(r => ({
+    const metadata: RiverMetadata[] = rivers.map(r => ({
       id: r.id,
       name: r.name,
       createdAt: r.createdAt,
@@ -161,8 +161,8 @@ export class CacheService {
   /**
    * Get cached rivers metadata
    */
-  static getCachedRiversMetadata(): any[] | null {
-    return this.getCache<any[]>(CACHE_KEYS.RIVERS_METADATA);
+  static getCachedRiversMetadata(): RiverMetadata[] | null {
+    return this.getCache<RiverMetadata[]>(CACHE_KEYS.RIVERS_METADATA);
   }
 
   /**
@@ -179,21 +179,6 @@ export class CacheService {
     Object.values(CACHE_KEYS).forEach(key => {
       localStorage.removeItem(key);
     });
-  }
-
-  /**
-   * Check if cache is fresh (not expired)
-   */
-  static isCacheFresh(key: string): boolean {
-    try {
-      const cached = localStorage.getItem(key);
-      if (!cached) return false;
-
-      const entry: CacheEntry<any> = JSON.parse(cached);
-      return Date.now() < entry.expiresAt;
-    } catch {
-      return false;
-    }
   }
 }
 

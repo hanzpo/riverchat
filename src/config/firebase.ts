@@ -25,7 +25,7 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  functions = getFunctions(app, 'us-central1');
+  functions = getFunctions(app, import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || 'us-central1');
 
   // Initialize Analytics only if supported (not in SSR, extensions, etc.)
   isSupported().then((supported) => {
@@ -34,7 +34,9 @@ try {
     }
   }).catch(() => {});
 
-  console.log('Firebase initialized successfully');
+  if (import.meta.env.DEV) {
+    console.log('Firebase initialized successfully');
+  }
 } catch (error) {
   console.error('Error initializing Firebase:', error);
   throw error;

@@ -1,7 +1,14 @@
 <template>
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="emit('close')">
-    <div class="modal-content w-[450px] p-7">
-      <h3 class="text-lg font-semibold mb-3" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+    <div
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmation-modal-title"
+      class="modal-content w-[450px] p-7"
+    >
+      <h3 id="confirmation-modal-title" class="text-lg font-semibold mb-3" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
         {{ title }}
       </h3>
       <p class="text-sm leading-relaxed mb-6 font-medium" style="color: var(--color-text-secondary);">
@@ -27,6 +34,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useModalA11y } from '../composables/useModalA11y';
+
 interface Props {
   isOpen: boolean;
   title: string;
@@ -41,13 +51,16 @@ interface Emits {
   (e: 'close'): void;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   confirmText: 'Confirm',
   cancelText: 'Cancel',
   isDangerous: false,
 });
 
 const emit = defineEmits<Emits>();
+
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 function handleConfirm() {
   emit('confirm');

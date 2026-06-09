@@ -121,6 +121,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { VueFlow, useVueFlow } from '@vue-flow/core';
+import type { NodeMouseEvent, NodeDragEvent, GraphNode } from '@vue-flow/core';
 import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
@@ -160,7 +161,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const { getSelectedNodes, project, vueFlowRef, zoomIn, zoomOut, fitView, addSelectedNodes } = useVueFlow();
+const { getSelectedNodes, project, vueFlowRef, zoomIn, zoomOut, fitView, addSelectedNodes, findNode } = useVueFlow();
 
 // Track nodes being dragged to batch position updates
 const draggedNodes = ref<Set<string>>(new Set());
@@ -181,7 +182,10 @@ const isRightDragging = ref(false);
 let rightButtonDown = false;
 let rightDragDetected = false;
 let rightClickStart: { x: number; y: number } | null = null;
-let pendingContextMenu: { type: 'pane' | 'node'; event: any } | null = null;
+let pendingContextMenu:
+  | { type: 'pane'; event: MouseEvent }
+  | { type: 'node'; event: NodeMouseEvent | MouseEvent }
+  | null = null;
 
 function onDocMouseDown(event: MouseEvent) {
   if (event.button === 2) {
@@ -220,14 +224,14 @@ function onDocMouseUp(event: MouseEvent) {
   }
 }
 
-// Watch for selection changes and emit to parent
+// Watch for selection changes and emit to parent.
+// Only the selection count matters for the emitted value, so watch the
+// length instead of deep-watching every selected node object.
 watch(
-  () => getSelectedNodes.value,
-  (selectedNodes) => {
-    const hasMultipleSelected = (selectedNodes?.length || 0) > 1;
-    emit('selection-change', hasMultipleSelected);
-  },
-  { deep: true }
+  () => getSelectedNodes.value.length,
+  (selectedCount) => {
+    emit('selection-change', selectedCount > 1);
+  }
 );
 
 const contextMenu = ref({
@@ -281,8 +285,18 @@ function syncFlowNodes() {
   flowNodes.value = result;
 }
 
-// Watch for changes in props.nodes and sync (but not during drag)
-watch(() => props.nodes, syncFlowNodes, { deep: true, immediate: true });
+// Watch for node additions/removals and river (re)loads, and sync.
+// A deep watch on props.nodes would re-run syncFlowNodes on every token of a
+// streaming response (node.content mutations), which is O(nodes²) per flush.
+// Node objects are shared by reference with VueFlow node data, so content,
+// state and position mutations propagate reactively without a re-sync —
+// only membership changes (key set) or a wholesale replacement of the nodes
+// object (river switch/reload) require rebuilding the flow nodes array.
+watch(
+  () => [props.nodes, Object.keys(props.nodes).join('\n')] as const,
+  syncFlowNodes,
+  { immediate: true }
+);
 
 // Convert edges
 const flowEdges = computed<VueFlowEdge[]>(() => {
@@ -472,42 +486,46 @@ function selectNodesInBox() {
   flowNodes.value.forEach((node) => {
     const nodeLeft = node.position.x;
     const nodeTop = node.position.y;
-    // Approximate node dimensions (actual node size may vary)
-    const nodeWidth = 300;
-    const nodeHeight = 100;
+    // Use the node's measured dimensions from Vue Flow, falling back to an
+    // approximate size if the node hasn't been measured yet.
+    const graphNode = findNode(node.id);
+    const nodeWidth = graphNode?.dimensions.width || 300;
+    const nodeHeight = graphNode?.dimensions.height || 100;
     const nodeRight = nodeLeft + nodeWidth;
     const nodeBottom = nodeTop + nodeHeight;
-    
+
     // Check if node intersects with selection box
     const intersects =
       nodeLeft < boxMax.x &&
       nodeRight > boxMin.x &&
       nodeTop < boxMax.y &&
       nodeBottom > boxMin.y;
-    
+
     if (intersects) {
       nodeIdsToSelect.push(node.id);
     }
   });
-  
-  // Update selection by setting the selected property on nodes
+
+  // Update selection by setting the selected property on Vue Flow's nodes
   flowNodes.value.forEach((node) => {
-    // Use type assertion to modify the node
-    const internalNode = node as any;
-    internalNode.selected = nodeIdsToSelect.includes(node.id);
+    const graphNode = findNode(node.id);
+    if (graphNode) {
+      graphNode.selected = nodeIdsToSelect.includes(node.id);
+    }
   });
 }
 
-// Event handlers
-function handleNodeClick(event: any) {
-  const nodeId = event.node?.id || event.data?.id;
+// Event handlers. These are bound both to Vue Flow events (NodeMouseEvent)
+// and to CustomNode emits (which pass the MessageNode directly).
+function handleNodeClick(event: NodeMouseEvent | MessageNode) {
+  const nodeId = 'node' in event ? event.node.id : event.id;
   if (nodeId) {
     emit('node-select', nodeId);
   }
 }
 
-function handleNodeDoubleClick(event: any) {
-  const node = event.node?.data || event.data;
+function handleNodeDoubleClick(event: NodeMouseEvent | MessageNode) {
+  const node = 'node' in event ? (event.node.data as MessageNode) : event;
   if (node) {
     emit('node-double-click', node);
   }
@@ -522,7 +540,7 @@ function clampMenuPosition(x: number, y: number, menuWidth: number = 220, menuHe
   };
 }
 
-function handleNodeContextMenu(event: any) {
+function handleNodeContextMenu(event: NodeMouseEvent | MouseEvent) {
   if (rightButtonDown) {
     // Defer until mouseup to check if it was a drag
     pendingContextMenu = { type: 'node', event };
@@ -531,11 +549,13 @@ function handleNodeContextMenu(event: any) {
   showNodeContextMenu(event);
 }
 
-function showNodeContextMenu(event: any) {
-  const mouseEvent = event.event || event;
-  const node = event.node?.data || event.data;
+function showNodeContextMenu(event: NodeMouseEvent | MouseEvent) {
+  // CustomNode emits a bare MouseEvent (no node payload); Vue Flow emits
+  // a NodeMouseEvent whose `event` may be a mouse or touch event.
+  const mouseEvent = event instanceof Event ? event : event.event;
+  const node = event instanceof Event ? null : (event.node.data as MessageNode);
 
-  if (node && mouseEvent) {
+  if (node && mouseEvent && 'clientX' in mouseEvent) {
     const selectedNodes = getSelectedNodes.value || [];
     const selectedNodesData = selectedNodes.map(n => n.data as MessageNode);
 
@@ -558,7 +578,7 @@ function handlePaneClick() {
   closeContextMenu();
 }
 
-function handlePaneContextMenu(event: any) {
+function handlePaneContextMenu(event: MouseEvent) {
   if (rightButtonDown) {
     // Defer until mouseup to check if it was a drag
     pendingContextMenu = { type: 'pane', event };
@@ -567,9 +587,7 @@ function handlePaneContextMenu(event: any) {
   showPaneContextMenu(event);
 }
 
-function showPaneContextMenu(event: any) {
-  const mouseEvent = event.event || event;
-
+function showPaneContextMenu(mouseEvent: MouseEvent) {
   if (mouseEvent) {
     const selectedNodes = getSelectedNodes.value || [];
     const selectedNodesData = selectedNodes.length > 1
@@ -606,7 +624,7 @@ function handleNodeDrag() {
   // We don't need to do anything here
 }
 
-async function handleNodeDragStop(event: any) {
+async function handleNodeDragStop(event: NodeDragEvent) {
   const nodeId = event.node?.id;
   const position = event.node?.position;
 
@@ -711,8 +729,12 @@ function handleCreateRootNode() {
 }
 
 function handleKeyboardDelete(event: KeyboardEvent) {
-  // Handle Delete or Backspace key
-  if (event.key === 'Delete' || event.key === 'Backspace') {
+  // Handle plain Delete or Backspace key. Modified combinations are
+  // ignored: Ctrl/Cmd+Delete is handled by the app-level keyboard
+  // shortcuts (useKeyboardShortcuts) for the app-selected node, and
+  // handling it here too used to open two confirmation dialogs at once.
+  if ((event.key === 'Delete' || event.key === 'Backspace') &&
+      !event.ctrlKey && !event.metaKey && !event.altKey) {
     // Check if user is typing in an input field
     const target = event.target as HTMLElement;
     const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
@@ -749,7 +771,7 @@ function handleClickOutside(event: MouseEvent) {
 
 // Setup selection box on pane
 // We need to detect right-click on the pane to start selection box
-let cleanupSelectionListener: (() => void) | null = null;
+let selectionPaneElement: Element | null = null;
 
 onMounted(() => {
   // Add click listener for closing context menu
@@ -764,15 +786,8 @@ onMounted(() => {
   document.addEventListener('mouseup', onDocMouseUp, true);
 
   // Find the Vue Flow pane element
-  const paneElement = document.querySelector('.vue-flow__pane');
-
-  if (paneElement) {
-    paneElement.addEventListener('mousedown', startSelectionBox as EventListener);
-
-    cleanupSelectionListener = () => {
-      paneElement.removeEventListener('mousedown', startSelectionBox as EventListener);
-    };
-  }
+  selectionPaneElement = document.querySelector('.vue-flow__pane');
+  selectionPaneElement?.addEventListener('mousedown', startSelectionBox as EventListener);
 });
 
 onUnmounted(() => {
@@ -787,9 +802,9 @@ onUnmounted(() => {
   document.removeEventListener('mousemove', onDocMouseMove, true);
   document.removeEventListener('mouseup', onDocMouseUp, true);
 
-  if (cleanupSelectionListener) {
-    cleanupSelectionListener();
-  }
+  // Remove the pane selection listener (safe even if it was never attached)
+  selectionPaneElement?.removeEventListener('mousedown', startSelectionBox as EventListener);
+  selectionPaneElement = null;
 
   // Clean up any lingering event listeners
   document.removeEventListener('mousemove', updateSelectionBox);
@@ -808,9 +823,11 @@ defineExpose({
   zoomOut: () => zoomOut(),
   fitView: () => fitView(),
   selectAllNodes: () => {
-    const allNodes = flowNodes.value.map(n => n as any);
-    addSelectedNodes(allNodes);
-    return allNodes.length;
+    const graphNodes = flowNodes.value
+      .map(n => findNode(n.id))
+      .filter((n): n is GraphNode => !!n);
+    addSelectedNodes(graphNodes);
+    return graphNodes.length;
   },
 });
 </script>

@@ -1,6 +1,13 @@
 <template>
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="onBackdropClick">
-    <div class="modal-content w-[480px] p-8 text-center">
+    <div
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="onboarding-modal-title"
+      class="modal-content w-[480px] p-8 text-center"
+    >
       <!-- Value prop section -->
       <div class="mb-6">
         <!-- Branching tree visual -->
@@ -23,7 +30,7 @@
           </svg>
         </div>
 
-        <h1 class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.02em;">
+        <h1 id="onboarding-modal-title" class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.02em;">
           AI conversations that branch and compare
         </h1>
         <p class="text-xs leading-relaxed" style="color: var(--color-text-secondary);">
@@ -81,6 +88,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
+import { useModalA11y } from '../composables/useModalA11y';
 
 interface Props {
   isOpen: boolean;
@@ -100,6 +108,8 @@ const emit = defineEmits<Emits>();
 
 const message = ref('');
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 function onBackdropClick() {
   if (props.canDismiss) {

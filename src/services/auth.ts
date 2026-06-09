@@ -10,26 +10,35 @@ import {
   type UserCredential,
   type OAuthCredential,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, Timestamp, type FieldValue } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { CacheService } from './cache';
 import { usePostHog } from '../composables/usePostHog';
 import type { SubscriptionTier } from '../types';
 
+/**
+ * Profile timestamp fields are:
+ * - written as serverTimestamp() sentinels or Timestamp instances (FieldValue | Timestamp)
+ * - read back from Firestore as Timestamp
+ * - plain { seconds, nanoseconds } objects after a round-trip through the
+ *   localStorage cache (JSON serialization strips the Timestamp prototype)
+ */
+export type ProfileTimestamp = Timestamp | FieldValue | { seconds: number; nanoseconds: number };
+
 export interface UserProfile {
   uid: string;
   email: string;
   displayName?: string;
-  createdAt: any;
-  lastLoginAt: any;
+  createdAt: ProfileTimestamp;
+  lastLoginAt: ProfileTimestamp;
   subscriptionTier: SubscriptionTier;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   subscriptionCredits: number; // cents
   prepaidCredits: number; // cents
   creditEpoch: number;
-  currentPeriodStart: any;
-  currentPeriodEnd: any;
+  currentPeriodStart: ProfileTimestamp;
+  currentPeriodEnd: ProfileTimestamp;
 }
 
 export class AuthService {
@@ -93,7 +102,11 @@ export class AuthService {
       CacheService.cacheAuthState(userCredential.user);
 
       const analytics = usePostHog();
-      const profile = existingProfile || await this.getUserProfile(userCredential.user.uid);
+      // If the profile was just created or just merged with Google info, the
+      // cached copy (and `existingProfile`) is stale — bypass the cache.
+      const profile = (!existingProfile || wasAnonymous)
+        ? await this.getUserProfile(userCredential.user.uid, false)
+        : existingProfile;
       if (profile) {
         analytics.identify(userCredential.user.uid, profile);
         analytics.capture('user_signed_in', {
@@ -131,7 +144,7 @@ export class AuthService {
       const credential = await signInAnonymously(auth);
       const user = credential.user;
 
-      // Create profile with $2.00 free credits
+      // Create profile with 200 cents ($2.00) of free credits
       const existingProfile = await this.getUserProfile(user.uid);
       if (!existingProfile) {
         await this.createUserProfile(user);
@@ -239,7 +252,7 @@ export class AuthService {
       subscriptionTier: 'free',
       stripeCustomerId: null,
       stripeSubscriptionId: null,
-      subscriptionCredits: 200, // $2.00 free tier
+      subscriptionCredits: 200, // 200 cents = $2.00 free-tier credits (credits are stored in cents)
       prepaidCredits: 0,
       creditEpoch: 0,
       currentPeriodStart: serverTimestamp(),
@@ -256,12 +269,18 @@ export class AuthService {
 
   private static async updateProfileWithGoogleInfo(user: User): Promise<void> {
     try {
+      // After linkWithPopup the top-level user.displayName (and sometimes
+      // email) may not be populated yet — fall back to the linked Google
+      // provider data so the merged profile gets the Google account info.
+      const googleInfo = user.providerData.find(p => p.providerId === 'google.com');
       const userRef = doc(db, 'users', user.uid);
       await setDoc(userRef, {
-        email: user.email || '',
-        displayName: user.displayName || '',
+        email: user.email || googleInfo?.email || '',
+        displayName: user.displayName || googleInfo?.displayName || '',
         lastLoginAt: serverTimestamp(),
       }, { merge: true });
+      // Invalidate the cached profile so the merged info is read back fresh
+      CacheService.clearUserProfile();
     } catch (error) {
       console.error('Error updating profile with Google info:', error);
     }
@@ -278,6 +297,18 @@ export class AuthService {
 
   private static getAuthErrorMessage(errorCode: string): string {
     switch (errorCode) {
+      case 'auth/invalid-email':
+        return 'The email address is invalid. Please check it and try again.';
+      case 'auth/operation-not-allowed':
+        return 'This sign-in method is not enabled. Please contact support.';
+      case 'auth/user-not-found':
+        return 'No account found with these credentials. Please sign up first.';
+      case 'auth/invalid-credential':
+        return 'The sign-in credential is invalid or has expired. Please try again.';
+      case 'auth/email-already-in-use':
+        return 'An account with this email already exists. Please sign in instead.';
+      case 'auth/web-storage-unsupported':
+        return 'Your browser has storage disabled. Please enable cookies/site data and try again.';
       case 'auth/user-disabled':
         return 'This account has been disabled. Please contact support for assistance.';
       case 'auth/too-many-requests':

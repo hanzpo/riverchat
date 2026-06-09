@@ -49,7 +49,7 @@
     </div>
 
     <!-- Messages -->
-    <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 pt-16">
+    <div ref="messagesContainer" role="log" aria-live="polite" class="flex-1 overflow-y-auto p-4 pt-16">
       <div v-if="path.length === 0 && !isNewRootMode" class="flex items-center justify-center h-full px-5 py-10">
         <p class="text-xs text-center font-medium" style="color: var(--color-text-tertiary);">
           Type a message into the chat to create a new thread
@@ -205,186 +205,45 @@
 
     <!-- Input Area -->
     <div class="p-4 card-material">
-      <!-- Resend interface when user node is selected -->
-      <div v-if="!canSend && !isNewRootMode && path.length > 0 && selectedUserMessage" class="py-3">
-        <!-- Model Selection (Dropdowns) -->
-        <div class="mb-2 flex items-center gap-1.5 flex-wrap">
-          <button
-            @click="canEnableWebSearch ? webSearchEnabled = !webSearchEnabled : null"
-            class="flex items-center justify-center rounded-lg transition-all"
-            :class="{ 'hover:opacity-80': canEnableWebSearch, 'cursor-not-allowed opacity-50': !canEnableWebSearch }"
-            :style="'width: 18px; height: 18px; background: transparent; cursor: ' + (canEnableWebSearch ? 'pointer' : 'not-allowed') + ';'"
-            :title="canEnableWebSearch ? (webSearchEnabled ? 'Web search enabled' : 'Web search disabled') : 'Upgrade to use web search'"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="webSearchEnabled && canEnableWebSearch ? 'color: var(--color-primary);' : 'color: var(--color-text-tertiary);'">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-          </button>
-          <div v-for="(modelId, index) in selectedModelIds" :key="index" class="flex items-center gap-0.5">
-            <ModelDropdown
-              :selected-model-id="modelId"
-              :available-models="subscription.availableModels.value"
-              @select="(id: string) => handleModelSelect(index, id)"
-            />
-            <button
-              v-if="selectedModelIds.length > 1"
-              @click="removeModelSlot(index)"
-              class="p-0.5 rounded hover:bg-white/10 transition-colors"
-              style="color: var(--color-text-tertiary);"
-              title="Remove model"
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-          <button
-            v-if="selectedModelIds.length < subscription.maxModelsPerPrompt.value"
-            @click="addModelSlot"
-            class="flex items-center justify-center w-6 h-6 rounded-md hover:bg-white/10 transition-colors"
-            style="color: var(--color-text-tertiary); border: 1px dashed var(--color-border);"
-            title="Add model"
-          >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-          </button>
-        </div>
-
-        <!-- User message content (greyed out) -->
-        <div class="mb-2 p-3 rounded-lg" style="background: var(--color-background-secondary); border: 1px solid var(--color-border);">
-          <div class="text-[13.5px] leading-relaxed break-words whitespace-pre-wrap" style="color: var(--color-text-tertiary); opacity: 0.6;">
-            {{ selectedUserMessage.content }}
-          </div>
-        </div>
-
-        <!-- Resend button -->
-        <div class="flex justify-end">
-          <button
-            @click="handleResend"
-            :disabled="selectedModelIds.length === 0 || isSending"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all font-medium text-xs"
-            :style="(selectedModelIds.length === 0 || isSending)
-              ? 'background: var(--color-border); color: var(--color-text-tertiary); cursor: not-allowed;'
-              : 'background: var(--color-primary); color: white; cursor: pointer;'"
-            :title="isSending ? 'Sending...' : (selectedModelIds.length > 1 ? `Resend to ${selectedModelIds.length} models` : 'Resend message')"
-          >
-            <div v-if="isSending" class="loading-spinner-small"></div>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-              <path d="M21 3v5h-5"/>
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-              <path d="M3 21v-5h5"/>
-            </svg>
-            <span>Resend</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Normal input area when AI node is selected or in new root mode -->
-      <div v-else>
-        <!-- Branch Context Display (like Cursor) -->
-        <div v-if="branchContext.text" class="mb-3 p-3 bg-accent/10 border border-accent/30 rounded-lg animate-slide-in">
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <div class="flex items-center gap-2">
-              <GitBranch :size="14" class="text-accent" />
-              <span class="text-[11px] font-bold text-accent uppercase tracking-wider">Selected Context</span>
-            </div>
-            <button
-              @click="clearBranchContext"
-              class="text-white/50 hover:text-white/90 transition-colors text-xs font-bold px-2 py-0.5 hover:bg-white/10 rounded flex items-center"
-              title="Clear context"
-            >
-              <X :size="14" />
-            </button>
-          </div>
-          <div class="text-[12px] text-white/75 italic pl-3 border-l-2 border-accent/50 max-h-24 overflow-y-auto">
-            "{{ branchContext.text }}"
-          </div>
-        </div>
-
-         <!-- Model Selection (Dropdowns) -->
-         <div class="mb-2 flex items-center gap-1.5 flex-wrap">
-           <button
-             @click="handleWebSearchClick($event)"
-             class="flex items-center justify-center rounded-lg transition-all"
-             :class="{ 'hover:opacity-80': canEnableWebSearch, 'cursor-pointer opacity-50 hover:opacity-70': !canEnableWebSearch }"
-             :style="'width: 18px; height: 18px; background: transparent; cursor: pointer;'"
-             :title="canEnableWebSearch ? (webSearchEnabled ? 'Web search enabled' : 'Web search disabled') : 'Upgrade to use web search'"
-           >
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" :style="webSearchEnabled && canEnableWebSearch ? 'color: var(--color-primary);' : 'color: var(--color-text-tertiary);'">
-               <circle cx="12" cy="12" r="10"/>
-               <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-             </svg>
-           </button>
-           <div v-for="(modelId, index) in selectedModelIds" :key="index" class="flex items-center gap-0.5">
-             <ModelDropdown
-               :selected-model-id="modelId"
-               :available-models="subscription.availableModels.value"
-               @select="(id: string) => handleModelSelect(index, id)"
-             />
-             <button
-               v-if="selectedModelIds.length > 1"
-               @click="removeModelSlot(index)"
-               class="p-0.5 rounded hover:bg-white/10 transition-colors"
-               style="color: var(--color-text-tertiary);"
-               title="Remove model"
-             >
-               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-             </button>
-           </div>
-           <button
-             v-if="selectedModelIds.length < subscription.maxModelsPerPrompt.value"
-             @click="addModelSlot"
-             class="flex items-center justify-center w-6 h-6 rounded-md hover:bg-white/10 transition-colors"
-             style="color: var(--color-text-tertiary); border: 1px dashed var(--color-border);"
-             title="Add model"
-           >
-             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-           </button>
-         </div>
-
-         <div class="flex items-end gap-2">
-           <textarea
-             ref="textareaRef"
-             v-model="inputText"
-             class="textarea-material text-[13.5px] flex-1"
-             :placeholder="branchContext.text ? 'Ask about the selected text...' : 'Type your message...'"
-             rows="1"
-             style="resize: none; min-height: 40px; max-height: 200px;"
-             @input="autoResizeTextarea"
-             @keydown="handleKeydown"
-           ></textarea>
-
-           <button
-             @click="handleSend"
-             :disabled="!inputText.trim() || !canSend || selectedModelIds.length === 0 || isSending"
-             class="flex items-center justify-center rounded-lg transition-all"
-             :style="(!inputText.trim() || !canSend || selectedModelIds.length === 0 || isSending)
-               ? 'width: 40px; height: 40px; background: var(--color-border); cursor: not-allowed;'
-               : 'width: 40px; height: 40px; background: var(--color-primary); cursor: pointer;'"
-             :title="isSending ? 'Sending...' : (selectedModelIds.length > 1 ? `Send to ${selectedModelIds.length} models` : 'Send message')"
-           >
-             <div v-if="isSending" class="loading-spinner-small"></div>
-             <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: white;">
-               <path d="M12 19V5M5 12l7-7 7 7"/>
-             </svg>
-           </button>
-         </div>
-      </div>
+      <ChatInputArea
+        ref="inputArea"
+        v-model="inputText"
+        compact
+        :resend-mode="resendMode"
+        :selected-user-message="selectedUserMessage"
+        :selected-model-ids="selectedModelIds"
+        :available-models="subscription.availableModels.value"
+        :max-models-per-prompt="subscription.maxModelsPerPrompt.value"
+        :web-search-enabled="webSearchEnabled"
+        :can-enable-web-search="canEnableWebSearch"
+        :can-send="canSend"
+        :is-sending="!!isSending"
+        :branch-context-text="branchContext.text"
+        @web-search-click="handleWebSearchClick"
+        @model-select="handleModelSelect"
+        @add-model="addModelSlot"
+        @remove-model="removeModelSlot"
+        @send="handleSend"
+        @resend="handleResend"
+        @keydown="handleKeydown"
+        @textarea-input="autoResizeTextarea"
+        @clear-branch-context="clearBranchContext"
+      />
     </div>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
-import type { MessageNode, Settings } from '../types';
-import { User, Bot, GitBranch, AlertTriangle, X } from 'lucide-vue-next';
+import { ref, computed, watch, watchEffect, nextTick } from 'vue';
+import type { MessageNode, Settings, LLMModel } from '../types';
+import { User, Bot, GitBranch, AlertTriangle } from 'lucide-vue-next';
 import { renderMarkdown, formatTime, getBranchCount } from '../utils/chat';
 import TextHighlightPopover from './TextHighlightPopover.vue';
-import ModelDropdown from './ModelDropdown.vue';
+import ChatInputArea from './ChatInputArea.vue';
 import UpgradePopover from './UpgradePopover.vue';
-import { useChatPanel } from '../composables/useChatPanel';
+import { useChatPanel, type ChatPanelUser } from '../composables/useChatPanel';
 import { usePostHog } from '../composables/usePostHog';
-import type { User as FirebaseUser } from 'firebase/auth';
 
 const chatAnalytics = usePostHog();
 
@@ -395,24 +254,31 @@ interface Props {
   allNodes?: Record<string, MessageNode>;
   settings?: Settings;
   isSending?: boolean;
-  currentUser?: FirebaseUser | null;
+  currentUser?: ChatPanelUser | null;
 }
 
 interface Emits {
-  (e: 'send', content: string, models: any[], webSearchEnabled: boolean): void;
+  (e: 'send', content: string, models: LLMModel[], webSearchEnabled: boolean): void;
   (e: 'node-select', nodeId: string): void;
-  (e: 'branch-from-text', nodeId: string, highlightedText: string, elaborationPrompt: string, models: any[], webSearchEnabled: boolean): void;
+  (e: 'branch-from-text', nodeId: string, highlightedText: string, elaborationPrompt: string, models: LLMModel[], webSearchEnabled: boolean): void;
   (e: 'chat-model-changed', modelIds: string[]): void;
   (e: 'close'): void;
   (e: 'pop-out'): void;
-  (e: 'resend', userNodeId: string, models: any[], webSearchEnabled: boolean): void;
+  (e: 'resend', userNodeId: string, models: LLMModel[], webSearchEnabled: boolean): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+// Dismissal flags persisted to localStorage so they survive remounts
+const MULTI_MODEL_PROMPT_DISMISSED_KEY = 'riverchat:multiModelPromptDismissed';
+const UPGRADE_NUDGE_DISMISSED_KEY = 'riverchat:upgradeNudgeDismissed';
+
 // Multi-model prompt: show once after first AI response with single model
-const multiModelPromptDismissed = ref(false);
+const multiModelPromptDismissed = ref(localStorage.getItem(MULTI_MODEL_PROMPT_DISMISSED_KEY) === 'true');
+watch(multiModelPromptDismissed, (dismissed) => {
+  if (dismissed) localStorage.setItem(MULTI_MODEL_PROMPT_DISMISSED_KEY, 'true');
+});
 const showMultiModelPrompt = computed(() => {
   if (multiModelPromptDismissed.value) return false;
   if (props.settings?.hasSeenMultiModelPrompt) return false;
@@ -422,7 +288,10 @@ const showMultiModelPrompt = computed(() => {
 });
 
 // Post-response upgrade nudge (2D): show on free tier after AI responses
-const upgradeNudgeDismissed = ref(false);
+const upgradeNudgeDismissed = ref(localStorage.getItem(UPGRADE_NUDGE_DISMISSED_KEY) === 'true');
+watch(upgradeNudgeDismissed, (dismissed) => {
+  if (dismissed) localStorage.setItem(UPGRADE_NUDGE_DISMISSED_KEY, 'true');
+});
 const showUpgradeNudge = computed(() => {
   if (upgradeNudgeDismissed.value) return false;
   if (subscription.tier.value !== 'free') return false;
@@ -469,6 +338,17 @@ const {
   },
   { textareaMinHeight: '40px' }
 );
+
+// Whether to show the resend UI instead of the normal input
+const resendMode = computed(() =>
+  !canSend.value && !props.isNewRootMode && props.path.length > 0 && !!selectedUserMessage.value
+);
+
+// Wire the input area's textarea element into the chat panel composable
+const inputArea = ref<InstanceType<typeof ChatInputArea> | null>(null);
+watchEffect(() => {
+  textareaRef.value = inputArea.value?.textarea ?? null;
+});
 
 // Consolidated autofocus logic - focus textarea when it becomes available
 watch(

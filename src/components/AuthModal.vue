@@ -1,8 +1,16 @@
 <template>
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="emit('close')">
     <!-- Account Conflict state -->
-    <div v-if="showAccountConflict" class="modal-content w-[400px] p-8 text-center">
-      <h2 class="text-lg font-semibold mb-1" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+    <div
+      v-if="showAccountConflict"
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      class="modal-content w-[400px] p-8 text-center"
+    >
+      <h2 id="auth-modal-title" class="text-lg font-semibold mb-1" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
         You already have an account
       </h2>
       <p class="text-xs mb-5" style="color: var(--color-text-secondary);">
@@ -30,8 +38,16 @@
     </div>
 
     <!-- Default state -->
-    <div v-else class="modal-content w-[400px] p-8 text-center">
-      <h2 class="text-lg font-semibold mb-1" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+    <div
+      v-else
+      ref="modalEl"
+      tabindex="-1"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      class="modal-content w-[400px] p-8 text-center"
+    >
+      <h2 id="auth-modal-title" class="text-lg font-semibold mb-1" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
         {{ isAnonymous ? 'Keep your conversations' : 'Sign in' }}
       </h2>
       <p class="text-xs mb-4" style="color: var(--color-text-secondary);">
@@ -102,6 +118,7 @@ import { ref, computed, watch } from 'vue';
 import { AuthService } from '../services/auth';
 import { FirestoreStorageService } from '../services/firestore-storage';
 import { auth } from '../config/firebase';
+import { useModalA11y } from '../composables/useModalA11y';
 
 interface Props {
   isOpen: boolean;
@@ -125,6 +142,9 @@ const errorMessage = ref('');
 const isLoading = ref(false);
 const showAccountConflict = ref(false);
 const isAnonymous = computed(() => auth.currentUser?.isAnonymous ?? false);
+
+const modalEl = ref<HTMLElement | null>(null);
+useModalA11y(() => props.isOpen, modalEl);
 
 // Reset form when modal opens
 watch(

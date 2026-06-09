@@ -4,6 +4,14 @@ import { resolveModelIds, DEFAULT_MODEL_ID } from '../types';
 import { useSubscription } from './useSubscription';
 import type { User as FirebaseUser } from 'firebase/auth';
 
+/**
+ * Minimal user shape the chat UI needs. A real Firebase `User` satisfies
+ * this structurally; the optimistic cached-auth state in App.vue provides
+ * only these fields (without `isAnonymous`).
+ */
+export type ChatPanelUser = Pick<FirebaseUser, 'uid' | 'email' | 'displayName'> &
+  Partial<Pick<FirebaseUser, 'isAnonymous'>>;
+
 interface ChatPanelProps {
   path: MessageNode[];
   selectedNodeId: string | null;
@@ -11,7 +19,7 @@ interface ChatPanelProps {
   allNodes?: Record<string, MessageNode>;
   settings?: Settings;
   isSending?: boolean;
-  currentUser?: FirebaseUser | null;
+  currentUser?: ChatPanelUser | null;
 }
 
 interface ChatPanelEmits {

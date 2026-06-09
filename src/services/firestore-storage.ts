@@ -36,7 +36,10 @@ export class FirestoreStorageService {
     if (useCache) {
       const cached = CacheService.getCachedRiversMetadata();
       if (cached) {
-        return cached;
+        // The cache stores lightweight metadata without node data; rehydrate
+        // to the River shape with empty nodes so callers get a valid River[].
+        // Full node data is loaded per-river via getRiver().
+        return cached.map(({ nodeCount: _nodeCount, ...meta }) => ({ ...meta, nodes: {} }));
       }
     }
 
@@ -100,6 +103,9 @@ export class FirestoreStorageService {
     } catch (error) {
       console.error('Error saving river to Firestore:', error);
       this.saveLocalRiver(river);
+    } finally {
+      // The rivers list changed — drop stale cached metadata
+      CacheService.clearRiversMetadata();
     }
   }
 
@@ -117,6 +123,9 @@ export class FirestoreStorageService {
     } catch (error) {
       console.error('Error deleting river from Firestore:', error);
       this.deleteLocalRiver(id);
+    } finally {
+      // The rivers list changed — drop stale cached metadata
+      CacheService.clearRiversMetadata();
     }
   }
 
@@ -234,7 +243,9 @@ export class FirestoreStorageService {
         return { rivers: [], settings: DEFAULT_SETTINGS, activeRiverId: null };
       }
       return JSON.parse(data) as RiverChatData;
-    } catch {
+    } catch (error) {
+      // Graceful fallback, but surface the cause (quota, corrupted JSON, ...)
+      console.warn('[FirestoreStorage] Failed to read local data; falling back to empty state:', error);
       return { rivers: [], settings: DEFAULT_SETTINGS, activeRiverId: null };
     }
   }

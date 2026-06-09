@@ -3,7 +3,8 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noImplicitReturns": true,
-    "noUnusedLocals": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
@@ -14,5 +15,6 @@
     "declaration": true
   },
   "compileOnSave": true,
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }

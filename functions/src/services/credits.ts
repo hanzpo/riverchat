@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import type { SubscriptionTier } from '../config/tiers.js';
 import { TIER_CONFIGS } from '../config/tiers.js';
+import { splitDeduction, computeReconciledBalances } from './creditMath.js';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -129,26 +130,15 @@ export async function deductCredits(
     }
 
     const data = doc.data()!;
-    let subCredits: number = data.subscriptionCredits ?? 0;
-    let prepaidCredits: number = data.prepaidCredits ?? 0;
-    let remaining = amountCents;
-
-    // Deduct from subscription credits first
-    const subDeduction = Math.min(subCredits, remaining);
-    subCredits -= subDeduction;
-    remaining -= subDeduction;
-
-    // Then from prepaid credits
-    const prepaidDeduction = Math.min(prepaidCredits, remaining);
-    prepaidCredits -= prepaidDeduction;
-    remaining -= prepaidDeduction;
-
-    // If remaining > 0, user went over budget (allow it but log)
-    if (remaining > 0) {
-      // Allow the overage — don't fail the deduction for a completed response.
-      // The balance will go slightly negative on prepaid, which is fine.
-      prepaidCredits -= remaining;
-    }
+    // Deduct from subscription credits first, then prepaid. Allow overage —
+    // don't fail the deduction for a completed response. The balance will go
+    // slightly negative on prepaid, which is fine.
+    const { subCredits, prepaidCredits } = splitDeduction(
+      data.subscriptionCredits ?? 0,
+      data.prepaidCredits ?? 0,
+      amountCents,
+      true
+    );
 
     tx.update(userRef, {
       subscriptionCredits: subCredits,
@@ -230,36 +220,31 @@ export async function reserveCredits(
 
     const total = subCredits + prepaidCredits;
 
+    // Intentional 1-cent minimum: even a zero-cost estimate (e.g. a tiny
+    // prompt that rounds to 0 cents) requires at least 1 cent of balance,
+    // so users with no credits at all cannot start streams for free.
     if (total < Math.max(estimatedCents, 1)) {
       throw new InsufficientBalanceError(total, estimatedCents);
     }
 
-    let remaining = estimatedCents;
-
-    // Deduct from subscription credits first
-    const subDeduction = Math.min(subCredits, remaining);
-    subCredits -= subDeduction;
-    remaining -= subDeduction;
-
-    // Then from prepaid credits
-    const prepaidDeduction = Math.min(prepaidCredits, remaining);
-    prepaidCredits -= prepaidDeduction;
-    remaining -= prepaidDeduction;
+    // Deduct from subscription credits first, then prepaid. No overage here:
+    // the balance check above guarantees the reservation is fully covered.
+    const split = splitDeduction(subCredits, prepaidCredits, estimatedCents, false);
 
     tx.update(userRef, {
-      subscriptionCredits: subCredits,
-      prepaidCredits: prepaidCredits,
+      subscriptionCredits: split.subCredits,
+      prepaidCredits: split.prepaidCredits,
       ...extraFields,
     });
 
     return {
-      subDeduction,
-      prepaidDeduction,
+      subDeduction: split.subDeduction,
+      prepaidDeduction: split.prepaidDeduction,
       creditEpoch,
       balanceAfter: {
-        subscriptionCredits: subCredits,
-        prepaidCredits: prepaidCredits,
-        total: subCredits + prepaidCredits,
+        subscriptionCredits: split.subCredits,
+        prepaidCredits: split.prepaidCredits,
+        total: split.subCredits + split.prepaidCredits,
       },
     };
   });
@@ -300,41 +285,20 @@ export async function reconcileReservation(
     }
 
     const data = doc.data()!;
-    let subCredits: number = data.subscriptionCredits ?? 0;
-    let prepaidCredits: number = data.prepaidCredits ?? 0;
     const currentEpoch: number = data.creditEpoch ?? 0;
     const epochChanged = currentEpoch !== reservation.creditEpoch;
 
-    let droppedSubscriptionRefund = 0;
-    if (diff < 0) {
-      // Actual cost was less than reserved — refund the difference to the
-      // original buckets (reverse of the deduction order: prepaid first, then subscription)
-      let refundRemaining = Math.abs(diff);
-      const prepaidRefund = Math.min(refundRemaining, reservation.reservedFromPrepaid);
-      prepaidCredits += prepaidRefund;
-      refundRemaining -= prepaidRefund;
-      if (!epochChanged) {
-        // Only refund to subscription credits if the subscription balance
-        // hasn't been replaced since the reservation was made.
-        subCredits += refundRemaining;
-      } else {
-        // Track the subscription refund that was intentionally dropped
-        // because the subscription balance was reset since reservation.
-        droppedSubscriptionRefund = refundRemaining;
-      }
-    } else if (diff > 0) {
-      // Actual cost exceeded the reservation — deduct the extra
-      let remaining = diff;
-      if (!epochChanged) {
-        // Only deduct from subscription credits if the balance hasn't been
-        // replaced since the reservation was made.
-        const subDeduction = Math.min(subCredits, remaining);
-        subCredits -= subDeduction;
-        remaining -= subDeduction;
-      }
-      // Allow overage on prepaid (same as original deductCredits behavior)
-      prepaidCredits -= remaining;
-    }
+    // Pure bucket math lives in creditMath.ts (see comments there):
+    // refunds go prepaid-first (reverse of deduction order), overages
+    // subscription-first; subscription is skipped if the epoch changed.
+    const { subCredits, prepaidCredits, droppedSubscriptionRefund } =
+      computeReconciledBalances({
+        subCredits: data.subscriptionCredits ?? 0,
+        prepaidCredits: data.prepaidCredits ?? 0,
+        diff,
+        reservedFromPrepaid: reservation.reservedFromPrepaid,
+        epochChanged,
+      });
 
     tx.update(userRef, {
       subscriptionCredits: subCredits,

@@ -46,6 +46,25 @@ export function tierCanAccessCategory(
   return TIER_CONFIGS[tier].modelAccess.includes(category);
 }
 
+/**
+ * Map a Stripe price ID to a subscription tier.
+ * Returns null for missing or unrecognized price IDs — callers must fail
+ * closed rather than guessing a tier.
+ */
+export function getTierFromPriceId(
+  priceId: string | undefined,
+  configs: Record<SubscriptionTier, TierConfig> = TIER_CONFIGS
+): SubscriptionTier | null {
+  if (!priceId) return null;
+  if (configs.pro.stripePriceId && priceId === configs.pro.stripePriceId) {
+    return 'pro';
+  }
+  if (configs.max.stripePriceId && priceId === configs.max.stripePriceId) {
+    return 'max';
+  }
+  return null;
+}
+
 /** Get the minimum tier required to access a category */
 export function minTierForCategory(category: ModelCategory): SubscriptionTier {
   if (category === 'budget') return 'free';

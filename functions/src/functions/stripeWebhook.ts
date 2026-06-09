@@ -3,7 +3,11 @@ import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
 import { constructWebhookEvent, getStripeInstance } from '../services/stripe.js';
 import { addCredits } from '../services/credits.js';
-import { TIER_CONFIGS, type SubscriptionTier } from '../config/tiers.js';
+import {
+  TIER_CONFIGS,
+  getTierFromPriceId,
+  type SubscriptionTier,
+} from '../config/tiers.js';
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -84,6 +88,12 @@ export const stripeWebhook = onRequest(
           );
           break;
 
+        case 'invoice.payment_failed':
+          await handleInvoicePaymentFailed(
+            event.data.object as Stripe.Invoice
+          );
+          break;
+
         default:
           console.log(`Unhandled event type: ${event.type}`);
       }
@@ -127,25 +137,29 @@ async function handleCheckoutCompleted(
         ? session.subscription
         : session.subscription?.id;
 
+    if (!subscriptionId) {
+      throw new Error(
+        `handleCheckoutCompleted: no subscription ID on session ${session.id} for user ${uid}`
+      );
+    }
+
     // Derive tier from the subscription's price ID (not session metadata)
-    // to avoid silent mis-assignment if metadata is missing or tampered with
-    let tier: SubscriptionTier = 'pro';
-    if (subscriptionId) {
-      const stripe = getStripeInstance();
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const priceId = subscription.items.data[0]?.price?.id;
-      const derivedTier = getTierFromPriceId(priceId);
-      if (derivedTier) {
-        tier = derivedTier;
-      } else {
-        console.error(`handleCheckoutCompleted: unrecognized price ID ${priceId} for subscription ${subscriptionId}, falling back to session metadata`);
-        tier = (session.metadata?.tier as SubscriptionTier) || 'pro';
-      }
+    // to avoid silent mis-assignment if metadata is missing or tampered with.
+    // Fail closed on unrecognized price IDs: throwing returns a 500 so
+    // Stripe retries, rather than guessing a tier.
+    const stripe = getStripeInstance();
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const priceId = subscription.items.data[0]?.price?.id;
+    const tier: SubscriptionTier | null = getTierFromPriceId(priceId);
+    if (!tier) {
+      throw new Error(
+        `handleCheckoutCompleted: unrecognized price ID ${priceId} for subscription ${subscriptionId} (user ${uid}). Check STRIPE_PRO_PRICE_ID and STRIPE_MAX_PRICE_ID env vars.`
+      );
     }
 
     await db.doc(`users/${uid}`).update({
       subscriptionTier: tier,
-      stripeSubscriptionId: subscriptionId || null,
+      stripeSubscriptionId: subscriptionId,
       stripeCustomerId: session.customer as string,
     });
   } else if (session.mode === 'payment') {
@@ -208,15 +222,45 @@ async function handleSubscriptionDeleted(
   const uid = await findUidByCustomerId(customerId);
   if (!uid) return;
 
-  // Downgrade to free — keep prepaid credits, don't reset subscription credits.
-  // The resetMonthlyCredits scheduled function will handle the next natural
-  // credit reset when currentPeriodEnd is reached.
+  // Downgrade to free — keep prepaid credits, but reset subscription credits
+  // to the free-tier allowance so the user can't keep spending the paid
+  // allowance after cancelling. Bumping creditEpoch in the same update
+  // invalidates in-flight reservations against the old subscription balance.
   await db.doc(`users/${uid}`).update({
     subscriptionTier: 'free',
     stripeSubscriptionId: null,
+    subscriptionCredits: TIER_CONFIGS.free.monthlyCredits,
+    creditEpoch: admin.firestore.FieldValue.increment(1),
     currentPeriodEnd: admin.firestore.Timestamp.fromMillis(
       subscription.current_period_end * 1000
     ),
+  });
+}
+
+async function handleInvoicePaymentFailed(
+  invoice: Stripe.Invoice
+): Promise<void> {
+  // Only subscription invoices are relevant
+  if (!invoice.subscription) return;
+
+  const customerId =
+    typeof invoice.customer === 'string'
+      ? invoice.customer
+      : invoice.customer?.id;
+  if (!customerId) return;
+
+  const uid = await findUidByCustomerId(customerId);
+  if (!uid) return;
+
+  console.error(
+    `Invoice payment failed for user ${uid} (customer ${customerId}, invoice ${invoice.id})`
+  );
+
+  // Mark the subscription as past due. Don't strip credits here — Stripe
+  // will send customer.subscription.updated/deleted as the dunning process
+  // concludes, and those handlers adjust tier/credits.
+  await db.doc(`users/${uid}`).update({
+    subscriptionStatus: 'past_due',
   });
 }
 
@@ -264,14 +308,16 @@ async function handleInvoicePaymentSucceeded(
   // Update period end
   // Get period_end from invoice lines
   const periodEnd = invoice.lines?.data?.[0]?.period?.end;
-  if (periodEnd) {
-    await db.doc(`users/${uid}`).update({
-      stripeSubscriptionId: subscriptionId,
+  await db.doc(`users/${uid}`).update({
+    stripeSubscriptionId: subscriptionId,
+    // Payment succeeded — clear any past_due flag from a failed invoice
+    subscriptionStatus: 'active',
+    ...(periodEnd && {
       currentPeriodEnd: admin.firestore.Timestamp.fromMillis(
         periodEnd * 1000
       ),
-    });
-  }
+    }),
+  });
 }
 
 /** Find a Firebase UID by Stripe customer ID */
@@ -290,13 +336,4 @@ async function findUidByCustomerId(
   }
 
   return snapshot.docs[0].id;
-}
-
-/** Map a Stripe price ID to a subscription tier. Returns null for unrecognized price IDs. */
-function getTierFromPriceId(priceId: string | undefined): SubscriptionTier | null {
-  if (!priceId) return null;
-  if (priceId === TIER_CONFIGS.pro.stripePriceId) return 'pro';
-  if (priceId === TIER_CONFIGS.max.stripePriceId) return 'max';
-  console.error(`Unrecognized Stripe price ID: ${priceId}. Check STRIPE_PRO_PRICE_ID and STRIPE_MAX_PRICE_ID env vars.`);
-  return null;
 }

@@ -10,6 +10,8 @@ interface StreamOptions {
   model: string;
   messages: ChatMessage[];
   webSearch: boolean;
+  /** Optional abort signal to cancel the upstream request (e.g. client disconnect) */
+  signal?: AbortSignal;
 }
 
 interface GenerationInfo {
@@ -49,6 +51,7 @@ export async function streamFromOpenRouter(
       'X-Title': 'RiverChat',
     },
     body: JSON.stringify(requestBody),
+    signal: options.signal,
   });
 
   if (!response.ok) {

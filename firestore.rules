@@ -23,7 +23,11 @@ service cloud.firestore {
         && request.resource.data.stripeCustomerId == null
         && request.resource.data.stripeSubscriptionId == null
         && request.resource.data.creditEpoch == 0
-        && request.resource.data.currentPeriodStart is timestamp
+        // currentPeriodStart is only written by the client (the backend
+        // tracks periods via currentPeriodEnd), so validate the type only
+        // when it is present rather than requiring it.
+        && (!('currentPeriodStart' in request.resource.data)
+          || request.resource.data.currentPeriodStart is timestamp)
         && request.resource.data.currentPeriodEnd is timestamp
         && request.resource.data.currentPeriodEnd > request.time
         && request.resource.data.keys().hasOnly([
@@ -41,10 +45,24 @@ service cloud.firestore {
       allow delete: if false; // Prevent deletion through client
 
       // User's rivers (conversation threads)
+      // Shape validation matches the client's River type (src/types/index.ts):
+      // type checks only on the top-level fields, kept permissive so existing
+      // writes (which add updatedAt/migratedAt timestamps) keep working.
       match /rivers/{riverId} {
+        function isValidRiver(river) {
+          return river.id == riverId
+            && river.name is string
+            && river.name.size() <= 1000
+            && river.createdAt is string
+            && river.lastModified is string
+            && river.nodes is map
+            && (!('rootNodeId' in river)
+              || river.rootNodeId == null
+              || river.rootNodeId is string);
+        }
         allow read: if isOwner(userId);
-        allow create: if isOwner(userId);
-        allow update: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidRiver(request.resource.data);
+        allow update: if isOwner(userId) && isValidRiver(request.resource.data);
         allow delete: if isOwner(userId);
       }
 

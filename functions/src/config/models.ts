@@ -57,6 +57,23 @@ const MODEL_DEFS: ModelDef[] = [
   { id: 'openai/gpt-5.2-pro', displayName: 'GPT-5.2 Pro', provider: 'OpenAI', category: 'frontier', contextLength: 200000, orPrice: [21.00, 168.00] },
 ];
 
+// Cost math is done in integer micro-dollars (1 dollar = 1e6 micro-dollars)
+// per million tokens so it is deterministic: prices are converted to integers
+// once, and the only rounding happens at the final cents conversion.
+const MICRO_DOLLARS_PER_DOLLAR = 1_000_000;
+const MICRO_DOLLARS_PER_CENT = 10_000;
+const TOKENS_PER_MILLION = 1_000_000;
+
+/** Convert a dollars-per-million-tokens price to integer micro-dollars per million tokens */
+export function toMicroDollarsPerMillion(dollarsPerMillion: number): number {
+  return Math.round(dollarsPerMillion * MICRO_DOLLARS_PER_DOLLAR);
+}
+
+/** Apply the markup to a price, in integer micro-dollars per million tokens */
+function markupMicroDollarsPerMillion(dollarsPerMillion: number): number {
+  return Math.round(dollarsPerMillion * MARKUP_MULTIPLIER * MICRO_DOLLARS_PER_DOLLAR);
+}
+
 /** All models with computed markup pricing */
 export const MODEL_CATALOG: ModelConfig[] = MODEL_DEFS.map((def) => ({
   id: def.id,
@@ -68,9 +85,11 @@ export const MODEL_CATALOG: ModelConfig[] = MODEL_DEFS.map((def) => ({
     prompt: def.orPrice[0],
     completion: def.orPrice[1],
   },
+  // Display pricing derives from the same integer micro-dollar values used
+  // by calculateCostCents, so the displayed price matches what is charged.
   pricing: {
-    prompt: parseFloat((def.orPrice[0] * MARKUP_MULTIPLIER).toFixed(4)),
-    completion: parseFloat((def.orPrice[1] * MARKUP_MULTIPLIER).toFixed(4)),
+    prompt: markupMicroDollarsPerMillion(def.orPrice[0]) / MICRO_DOLLARS_PER_DOLLAR,
+    completion: markupMicroDollarsPerMillion(def.orPrice[1]) / MICRO_DOLLARS_PER_DOLLAR,
   },
 }));
 
@@ -94,17 +113,24 @@ export function calculateCostCents(
     throw new Error(`Unknown model: ${modelId}`);
   }
 
-  // OpenRouter prices are per million tokens (in dollars)
-  const ourCostDollars =
-    (promptTokens * model.openRouterPricing.prompt) / 1_000_000 +
-    (completionTokens * model.openRouterPricing.completion) / 1_000_000;
+  // Work in integer micro-dollars per million tokens. The products below
+  // stay well within Number.MAX_SAFE_INTEGER (tokens < 1e9, prices < 1e9),
+  // so the math is exact until the single rounding at the cents conversion.
+  const ourPromptMicro = toMicroDollarsPerMillion(model.openRouterPricing.prompt);
+  const ourCompletionMicro = toMicroDollarsPerMillion(model.openRouterPricing.completion);
+  const userPromptMicro = markupMicroDollarsPerMillion(model.openRouterPricing.prompt);
+  const userCompletionMicro = markupMicroDollarsPerMillion(model.openRouterPricing.completion);
 
-  const userCostDollars =
-    (promptTokens * model.pricing.prompt) / 1_000_000 +
-    (completionTokens * model.pricing.completion) / 1_000_000;
+  // tokens * (micro-dollars / 1M tokens) = micro-dollars * 1M; divide once
+  // by (1M * micro-dollars-per-cent) and round up at the final step.
+  const centsDivisor = TOKENS_PER_MILLION * MICRO_DOLLARS_PER_CENT;
+  const ourNumerator =
+    promptTokens * ourPromptMicro + completionTokens * ourCompletionMicro;
+  const userNumerator =
+    promptTokens * userPromptMicro + completionTokens * userCompletionMicro;
 
   return {
-    ourCostCents: Math.ceil(ourCostDollars * 100),
-    userCostCents: Math.ceil(userCostDollars * 100),
+    ourCostCents: Math.ceil(ourNumerator / centsDivisor),
+    userCostCents: Math.ceil(userNumerator / centsDivisor),
   };
 }

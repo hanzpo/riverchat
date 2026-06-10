@@ -25,7 +25,13 @@ interface ChatPanelProps {
 interface ChatPanelEmits {
   send: (content: string, models: LLMModel[], webSearchEnabled: boolean) => void;
   'node-select': (nodeId: string) => void;
-  'branch-from-text': (nodeId: string, highlightedText: string, elaborationPrompt: string, models: LLMModel[], webSearchEnabled: boolean) => void;
+  'branch-from-text': (
+    nodeId: string,
+    highlightedText: string,
+    elaborationPrompt: string,
+    models: LLMModel[],
+    webSearchEnabled: boolean
+  ) => void;
   'chat-model-changed': (modelIds: string[]) => void;
   resend: (userNodeId: string, models: LLMModel[], webSearchEnabled: boolean) => void;
 }
@@ -88,11 +94,19 @@ export function useChatPanel(
       isSyncingFromParent = true;
       if (ids && ids.length > 0) {
         selectedModelIds.value = [...ids];
-      } else if (selectedModelIds.value.length === 0 && subscription.availableModels.value.length > 0) {
-        const defaultModel = subscription.availableModels.value.find(m => m.id === DEFAULT_MODEL_ID);
+      } else if (
+        selectedModelIds.value.length === 0 &&
+        subscription.availableModels.value.length > 0
+      ) {
+        const defaultModel = subscription.availableModels.value.find(
+          (m) => m.id === DEFAULT_MODEL_ID
+        );
         selectedModelIds.value = [defaultModel?.id ?? subscription.availableModels.value[0]!.id];
       }
-      nextTick(() => { isInitializing = false; isSyncingFromParent = false; });
+      nextTick(() => {
+        isInitializing = false;
+        isSyncingFromParent = false;
+      });
     },
     { immediate: true }
   );
@@ -103,19 +117,25 @@ export function useChatPanel(
     (models) => {
       if (models.length > 0 && selectedModelIds.value.length === 0) {
         isSyncingFromParent = true;
-        const defaultModel = models.find(m => m.id === DEFAULT_MODEL_ID);
+        const defaultModel = models.find((m) => m.id === DEFAULT_MODEL_ID);
         selectedModelIds.value = [defaultModel?.id ?? models[0]!.id];
-        nextTick(() => { isSyncingFromParent = false; });
+        nextTick(() => {
+          isSyncingFromParent = false;
+        });
       }
     }
   );
 
   // Sync model changes back to parent
-  watch(selectedModelIds, (ids) => {
-    if (!isInitializing && !isSyncingFromParent && ids.length > 0) {
-      emitFn['chat-model-changed'](ids);
-    }
-  }, { deep: true });
+  watch(
+    selectedModelIds,
+    (ids) => {
+      if (!isInitializing && !isSyncingFromParent && ids.length > 0) {
+        emitFn['chat-model-changed'](ids);
+      }
+    },
+    { deep: true }
+  );
 
   // Disable web search if conditions no longer met
   watch(canEnableWebSearch, (canEnable) => {
@@ -146,7 +166,9 @@ export function useChatPanel(
   function addModelSlot() {
     if (selectedModelIds.value.length < subscription.maxModelsPerPrompt.value) {
       const usedIds = new Set(selectedModelIds.value);
-      const nextModel = subscription.availableModels.value.find(m => !usedIds.has(m.id) && subscription.canAccessModel(m));
+      const nextModel = subscription.availableModels.value.find(
+        (m) => !usedIds.has(m.id) && subscription.canAccessModel(m)
+      );
       if (nextModel) {
         selectedModelIds.value = [...selectedModelIds.value, nextModel.id];
       }
@@ -161,13 +183,17 @@ export function useChatPanel(
 
   const canSend = computed(() => {
     const props = getProps();
-    return props.isNewRootMode || props.path.length === 0 || props.path[props.path.length - 1]?.type === 'ai';
+    return (
+      props.isNewRootMode ||
+      props.path.length === 0 ||
+      props.path[props.path.length - 1]?.type === 'ai'
+    );
   });
 
   const selectedUserMessage = computed(() => {
     const props = getProps();
     if (!props.selectedNodeId || props.path.length === 0) return null;
-    return props.path.find(msg => msg.id === props.selectedNodeId && msg.type === 'user') || null;
+    return props.path.find((msg) => msg.id === props.selectedNodeId && msg.type === 'user') || null;
   });
 
   // Clear branch context when switching nodes
@@ -213,12 +239,23 @@ export function useChatPanel(
 
   function handleSend() {
     const props = getProps();
-    if (inputText.value.trim() && selectedModelIds.value.length > 0 && canSend.value && !props.isSending) {
+    if (
+      inputText.value.trim() &&
+      selectedModelIds.value.length > 0 &&
+      canSend.value &&
+      !props.isSending
+    ) {
       const models = resolveModelIds(selectedModelIds.value, subscription.availableModels.value);
       if (models.length === 0) return;
 
       if (branchContext.value.text && branchContext.value.sourceNodeId) {
-        emitFn['branch-from-text'](branchContext.value.sourceNodeId, branchContext.value.text, inputText.value.trim(), models, webSearchEnabled.value);
+        emitFn['branch-from-text'](
+          branchContext.value.sourceNodeId,
+          branchContext.value.text,
+          inputText.value.trim(),
+          models,
+          webSearchEnabled.value
+        );
         clearBranchContext();
       } else {
         emitFn.send(inputText.value.trim(), models, webSearchEnabled.value);
@@ -264,7 +301,9 @@ export function useChatPanel(
             selectedText,
             sourceNodeId: nodeId,
           };
-          setTimeout(() => { isSelecting = false; }, 150);
+          setTimeout(() => {
+            isSelecting = false;
+          }, 150);
         }
       } else {
         if (!isSelecting) {
@@ -282,7 +321,9 @@ export function useChatPanel(
       };
       highlightPopover.value.visible = false;
       window.getSelection()?.removeAllRanges();
-      nextTick(() => { textareaRef.value?.focus(); });
+      nextTick(() => {
+        textareaRef.value?.focus();
+      });
     }
   }
 

@@ -1,27 +1,57 @@
 <template>
-  <div class="w-screen h-screen overflow-hidden relative" style="background: var(--color-background);" :data-initialized="hasInitialized || undefined">
+  <div
+    class="w-screen h-screen overflow-hidden relative"
+    style="background: var(--color-background)"
+    :data-initialized="hasInitialized || undefined"
+  >
     <!-- Floating App Title and Navigation (Top Left) -->
     <div v-if="!showSettings" class="fixed top-4 left-4 z-50 flex flex-col gap-2">
       <!-- Logo and River Name -->
-      <div class="flex items-center gap-3 px-4 py-2 rounded-lg shadow-lg" style="background: var(--color-background-secondary); border: 1px solid var(--color-border);">
-        <h1 class="text-sm font-semibold" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+      <div
+        class="flex items-center gap-3 px-4 py-2 rounded-lg shadow-lg"
+        style="background: var(--color-background-secondary); border: 1px solid var(--color-border)"
+      >
+        <h1
+          class="text-sm font-semibold"
+          style="color: var(--color-text-primary); letter-spacing: -0.01em"
+        >
           🌊 RiverChat
         </h1>
-        <span v-if="currentRiver" class="text-xs font-medium px-2 py-0.5 rounded-md" style="color: var(--color-text-secondary); background: var(--color-background); border: 1px solid var(--color-border);">
+        <span
+          v-if="currentRiver"
+          class="text-xs font-medium px-2 py-0.5 rounded-md"
+          style="
+            color: var(--color-text-secondary);
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+          "
+        >
           {{ currentRiver.name }}
         </span>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex gap-2">
-        <button @click="handleShowRiverDashboard" class="btn-material text-xs flex items-center gap-1.5 px-3 py-2" title="Manage Rivers (Ctrl+K)">
+        <button
+          @click="handleShowRiverDashboard"
+          class="btn-material text-xs flex items-center gap-1.5 px-3 py-2"
+          title="Manage Rivers (Ctrl+K)"
+        >
           <Folder :size="14" />
           <span>Rivers</span>
         </button>
-        <button class="btn-material p-2 opacity-50 cursor-not-allowed" title="Search (coming soon)" disabled>
+        <button
+          class="btn-material p-2 opacity-50 cursor-not-allowed"
+          title="Search (coming soon)"
+          disabled
+        >
           <Search :size="14" />
         </button>
-        <button @click="showHelp = true" class="btn-material p-2" title="Keyboard Shortcuts (Ctrl+?)">
+        <button
+          @click="showHelp = true"
+          class="btn-material p-2"
+          title="Keyboard Shortcuts (Ctrl+?)"
+        >
           <HelpCircle :size="14" />
         </button>
         <button @click="showSettings = true" class="btn-material p-2" title="Settings (Ctrl+,)">
@@ -31,14 +61,18 @@
         <!-- Auth button - show for anonymous or unauthenticated users -->
         <button
           v-if="!currentUser || currentUser.isAnonymous || isAuthenticating"
-          @click="!isAuthenticating ? showAuth = true : null"
+          @click="!isAuthenticating ? (showAuth = true) : null"
           class="btn-material text-xs flex items-center gap-1.5 px-3 py-2"
           :class="{ 'opacity-60 cursor-wait': isAuthenticating }"
           :disabled="isAuthenticating"
-          :title="isAuthenticating ? 'Signing in...' : (currentUser?.isAnonymous ? 'Sign Up' : 'Sign In')"
+          :title="
+            isAuthenticating ? 'Signing in...' : currentUser?.isAnonymous ? 'Sign Up' : 'Sign In'
+          "
         >
           <UserIcon :size="14" />
-          <span>{{ isAuthenticating ? 'Signing in...' : (currentUser?.isAnonymous ? 'Sign Up' : 'Sign In') }}</span>
+          <span>{{
+            isAuthenticating ? 'Signing in...' : currentUser?.isAnonymous ? 'Sign Up' : 'Sign In'
+          }}</span>
         </button>
       </div>
     </div>
@@ -68,26 +102,43 @@
           @pane-click="handlePaneClick"
           @selection-change="handleSelectionChange"
         />
-        
+
         <!-- New Root Node Button (Floating - top right) -->
         <button
-          v-if="currentRiver && !selectedNodeId && !isNewRootMode && !hasMultipleNodesSelected && !showSettings"
+          v-if="
+            currentRiver &&
+            !selectedNodeId &&
+            !isNewRootMode &&
+            !hasMultipleNodesSelected &&
+            !showSettings
+          "
           @click="handleCreateRootNode"
           class="fixed top-4 right-4 z-50 btn-material px-5 py-2.5 text-sm font-bold flex items-center gap-2 shadow-elevation-3"
         >
           <Plus :size="16" />
           <span>New Root Node</span>
         </button>
-        
-        <div v-if="!currentRiver" class="flex items-center justify-center h-full" style="background: var(--color-background);">
+
+        <div
+          v-if="!currentRiver"
+          class="flex items-center justify-center h-full"
+          style="background: var(--color-background)"
+        >
           <div class="text-center">
-            <h2 class="text-2xl font-semibold mb-3" style="color: var(--color-text-primary); letter-spacing: -0.02em;">
+            <h2
+              class="text-2xl font-semibold mb-3"
+              style="color: var(--color-text-primary); letter-spacing: -0.02em"
+            >
               Welcome to RiverChat
             </h2>
-            <p class="text-sm mb-6 font-medium" style="color: var(--color-text-secondary);">
+            <p class="text-sm mb-6 font-medium" style="color: var(--color-text-secondary)">
               Create a new river to start your first conversation
             </p>
-            <button @click="showCreateRiver = true" class="btn-material" style="padding: 10px 20px; font-size: 14px; font-weight: 600;">
+            <button
+              @click="showCreateRiver = true"
+              class="btn-material"
+              style="padding: 10px 20px; font-size: 14px; font-weight: 600"
+            >
               + Create River
             </button>
           </div>
@@ -95,22 +146,19 @@
       </div>
 
       <!-- Right Panel: Chat History -->
-      <div 
+      <div
         ref="chatPanel"
         v-if="(selectedNodeId || isNewRootMode) && !hasMultipleNodesSelected && !showChatModal"
         class="flex flex-col relative"
-        :style="{ 
-          width: `${chatPanelWidth}px`, 
+        :style="{
+          width: `${chatPanelWidth}px`,
           borderLeft: '1px solid var(--color-border)',
-          background: 'var(--color-background-secondary)'
+          background: 'var(--color-background-secondary)',
         }"
       >
         <!-- Resize Handle -->
-        <div 
-          class="resize-handle z-10"
-          @mousedown="startResize"
-        ></div>
-        
+        <div class="resize-handle z-10" @mousedown="startResize"></div>
+
         <ChatHistory
           :path="currentPath"
           :selected-node-id="selectedNodeId"
@@ -143,7 +191,10 @@
       v-if="currentUser?.isAnonymous && !showAuth && !showWelcome && !showOnboarding"
       :visible="showAuthPrompt"
       :message="authPromptMessage"
-      @sign-up="showAuth = true; analytics.capture('upgrade_prompt_clicked', { source: 'auth_banner' })"
+      @sign-up="
+        showAuth = true;
+        analytics.capture('upgrade_prompt_clicked', { source: 'auth_banner' });
+      "
     />
 
     <!-- Modals -->
@@ -202,7 +253,11 @@
     />
 
     <!-- Edit & Resubmit Modal -->
-    <div v-if="editConfirmation.isOpen" class="modal-backdrop z-[200]" @click.self="editConfirmation.isOpen = false">
+    <div
+      v-if="editConfirmation.isOpen"
+      class="modal-backdrop z-[200]"
+      @click.self="editConfirmation.isOpen = false"
+    >
       <div
         ref="editModalEl"
         tabindex="-1"
@@ -211,29 +266,46 @@
         aria-labelledby="edit-resubmit-modal-title"
         class="modal-content w-[550px] p-7"
       >
-        <h3 id="edit-resubmit-modal-title" class="text-lg font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+        <h3
+          id="edit-resubmit-modal-title"
+          class="text-lg font-semibold mb-2"
+          style="color: var(--color-text-primary); letter-spacing: -0.01em"
+        >
           Edit and Resubmit
         </h3>
-        <p class="text-sm leading-relaxed mb-4 font-medium" style="color: var(--color-text-secondary);">
+        <p
+          class="text-sm leading-relaxed mb-4 font-medium"
+          style="color: var(--color-text-secondary)"
+        >
           All responses below this message will be deleted and a new response will be generated.
         </p>
         <textarea
           ref="editTextarea"
           v-model="editConfirmation.content"
           class="textarea-material"
-          style="min-height: 120px; max-height: 300px;"
+          style="min-height: 120px; max-height: 300px"
           @keydown.ctrl.enter="confirmEditResubmit"
           @keydown.meta.enter="confirmEditResubmit"
         ></textarea>
         <div class="flex justify-end gap-3 mt-4">
-          <button @click="editConfirmation.isOpen = false" class="btn-material" style="padding: 8px 16px;">
+          <button
+            @click="editConfirmation.isOpen = false"
+            class="btn-material"
+            style="padding: 8px 16px"
+          >
             Cancel
           </button>
           <button
             @click="confirmEditResubmit"
             :disabled="!editConfirmation.content.trim()"
             class="btn-material"
-            style="padding: 8px 16px; font-weight: 600; background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);"
+            style="
+              padding: 8px 16px;
+              font-weight: 600;
+              background: var(--color-primary-muted);
+              color: var(--color-primary);
+              border-color: var(--color-primary);
+            "
           >
             Resubmit
           </button>
@@ -252,10 +324,7 @@
       @close="deleteBatchConfirmation.isOpen = false"
     />
 
-    <KeyboardShortcutsModal
-      :is-open="showHelp"
-      @close="showHelp = false"
-    />
+    <KeyboardShortcutsModal :is-open="showHelp" @close="showHelp = false" />
 
     <ChatModal
       v-if="showChatModal"
@@ -288,7 +357,10 @@
     <CreateRiverModal
       :is-open="showCreateRiver"
       @create="handleCreateRiverFromModal"
-      @close="showCreateRiver = false; pendingMessage = null"
+      @close="
+        showCreateRiver = false;
+        pendingMessage = null;
+      "
     />
 
     <!-- Credit Warning Banner -->
@@ -343,12 +415,18 @@ const OnboardingTooltip = defineAsyncComponent(() => import('./components/Onboar
 const AuthPromptBanner = defineAsyncComponent(() => import('./components/AuthPromptBanner.vue'));
 const SettingsPage = defineAsyncComponent(() => import('./components/SettingsPage.vue'));
 const RiverDashboard = defineAsyncComponent(() => import('./components/RiverDashboard.vue'));
-const MessageViewerModal = defineAsyncComponent(() => import('./components/MessageViewerModal.vue'));
+const MessageViewerModal = defineAsyncComponent(
+  () => import('./components/MessageViewerModal.vue')
+);
 const ConfirmationModal = defineAsyncComponent(() => import('./components/ConfirmationModal.vue'));
-const KeyboardShortcutsModal = defineAsyncComponent(() => import('./components/KeyboardShortcutsModal.vue'));
+const KeyboardShortcutsModal = defineAsyncComponent(
+  () => import('./components/KeyboardShortcutsModal.vue')
+);
 const AuthModal = defineAsyncComponent(() => import('./components/AuthModal.vue'));
 const CreateRiverModal = defineAsyncComponent(() => import('./components/CreateRiverModal.vue'));
-const CreditWarningBanner = defineAsyncComponent(() => import('./components/CreditWarningBanner.vue'));
+const CreditWarningBanner = defineAsyncComponent(
+  () => import('./components/CreditWarningBanner.vue')
+);
 
 const {
   currentRiver,
@@ -389,7 +467,11 @@ const {
   showCreateRiver,
   showOnboarding,
 } = modals;
-const pendingMessage = ref<{ content: string; models: LLMModel[]; webSearchEnabled: boolean } | null>(null);
+const pendingMessage = ref<{
+  content: string;
+  models: LLMModel[];
+  webSearchEnabled: boolean;
+} | null>(null);
 const viewingMessage = ref<MessageNode | null>(null);
 const isNewRootMode = ref(false);
 const hasMultipleNodesSelected = ref(false);
@@ -459,24 +541,32 @@ const totalMessageCount = computed(() => {
 });
 
 // Update page title when river changes
-watch(currentRiver, (river) => {
-  if (river) {
-    document.title = `${river.name} - RiverChat`;
-  } else {
-    document.title = 'RiverChat - Branching AI Conversations | Chat with Multiple AI Models';
-  }
-}, { immediate: true });
+watch(
+  currentRiver,
+  (river) => {
+    if (river) {
+      document.title = `${river.name} - RiverChat`;
+    } else {
+      document.title = 'RiverChat - Branching AI Conversations | Chat with Multiple AI Models';
+    }
+  },
+  { immediate: true }
+);
 
 // Track user properties when they change
 const analytics = usePostHog();
-watch(() => currentRiver.value, (river) => {
-  if (river && currentUser.value) {
-    analytics.setUserProperties({
-      river_count: allRivers.value.length,
-      active_river_node_count: Object.keys(river.nodes).length,
-    });
-  }
-}, { deep: false });
+watch(
+  () => currentRiver.value,
+  (river) => {
+    if (river && currentUser.value) {
+      analytics.setUserProperties({
+        river_count: allRivers.value.length,
+        active_river_node_count: Object.keys(river.nodes).length,
+      });
+    }
+  },
+  { deep: false }
+);
 
 // Resize functionality
 function startResize(e: MouseEvent) {
@@ -614,19 +704,24 @@ onMounted(async () => {
 
   // Determine onboarding variant via PostHog feature flag
   const variant = analytics.getFeatureFlag('onboarding-variant');
-  onboardingVariant.value = (typeof variant === 'string' && ['control', 'inline-chat', 'auto-river'].includes(variant))
-    ? variant
-    : 'inline-chat'; // default to new experience
+  onboardingVariant.value =
+    typeof variant === 'string' && ['control', 'inline-chat', 'auto-river'].includes(variant)
+      ? variant
+      : 'inline-chat'; // default to new experience
 
   // New user onboarding: auto-create a river and open chat panel so they can
   // start chatting immediately, then show the onboarding modal on top.
-  if (hasInitialized.value && (!currentUser.value || currentUser.value.isAnonymous) && allRivers.value.length === 0) {
+  if (
+    hasInitialized.value &&
+    (!currentUser.value || currentUser.value.isAnonymous) &&
+    allRivers.value.length === 0
+  ) {
     try {
       await createRiver('My First River');
       isNewRootMode.value = true;
       analytics.capture('onboarding_river_auto_created');
-    } catch (error) {
-      console.error('[App] Failed to auto-create onboarding river:', error);
+    } catch (_error) {
+      console.error('[App] Failed to auto-create onboarding river:', _error);
     }
 
     analytics.capture('onboarding_variant_shown', { variant: onboardingVariant.value });
@@ -695,7 +790,7 @@ async function handleFirstMessage(content: string) {
     settings.value.selectedModelIds.length > 0
       ? settings.value.selectedModelIds
       : [DEFAULT_MODEL_ID],
-    subscription.availableModels.value,
+    subscription.availableModels.value
   );
   if (models.length > 0) {
     await handleSendMessage(content, models, false);
@@ -725,9 +820,15 @@ function checkAuthPromptMilestones() {
   } else if (allRivers.value.length >= 2 && count >= 5) {
     authPromptMessage.value = `You have ${allRivers.value.length} conversations. Sign in to keep them safe.`;
     showAuthPrompt.value = true;
-    analytics.capture('upgrade_prompt_shown', { source: 'auth_banner', trigger: 'multiple_rivers' });
-  } else if (settings.value.firstVisitTimestamp && Date.now() - settings.value.firstVisitTimestamp > 7 * 24 * 60 * 60 * 1000) {
-    authPromptMessage.value = 'You\'ve been using RiverChat for a week. Sign in to sync your data.';
+    analytics.capture('upgrade_prompt_shown', {
+      source: 'auth_banner',
+      trigger: 'multiple_rivers',
+    });
+  } else if (
+    settings.value.firstVisitTimestamp &&
+    Date.now() - settings.value.firstVisitTimestamp > 7 * 24 * 60 * 60 * 1000
+  ) {
+    authPromptMessage.value = "You've been using RiverChat for a week. Sign in to sync your data.";
     showAuthPrompt.value = true;
     analytics.capture('upgrade_prompt_shown', { source: 'auth_banner', trigger: 'seven_days' });
   }
@@ -756,8 +857,8 @@ async function handleLogout() {
     setTimeout(() => {
       window.location.reload();
     }, 500);
-  } catch (error) {
-    console.error('Logout error:', error);
+  } catch (_error) {
+    console.error('Logout error:', _error);
     showToast('Failed to sign out', 'error');
   } finally {
     isAuthenticating.value = false;
@@ -789,9 +890,13 @@ async function handleCreateRiverFromModal(name: string) {
     showToast(`Created "${river.name}"`, 'success');
     // Send any pending message that was queued before the river existed
     if (savedPendingMessage && currentRiver.value) {
-      await handleSendMessage(savedPendingMessage.content, savedPendingMessage.models, savedPendingMessage.webSearchEnabled);
+      await handleSendMessage(
+        savedPendingMessage.content,
+        savedPendingMessage.models,
+        savedPendingMessage.webSearchEnabled
+      );
     }
-  } catch (error) {
+  } catch (_error) {
     showToast('Failed to create river', 'error');
   } finally {
     isRiverOperationLoading.value = false;
@@ -804,7 +909,7 @@ async function handleCreateRiver(name: string) {
     const river = await createRiver(name);
     analytics.capture('river_created', { source: 'dashboard' });
     showToast(`Created "${river.name}"`, 'success');
-  } catch (error) {
+  } catch (_error) {
     showToast('Failed to create river', 'error');
   } finally {
     isRiverOperationLoading.value = false;
@@ -817,7 +922,7 @@ async function handleOpenRiver(riverId: string) {
     if (await loadRiver(riverId)) {
       showToast('River loaded', 'success');
     }
-  } catch (error) {
+  } catch (_error) {
     showToast('Failed to load river', 'error');
   } finally {
     isRiverOperationLoading.value = false;
@@ -829,7 +934,7 @@ async function handleRenameRiver(riverId: string, newName: string) {
   try {
     await renameRiver(riverId, newName);
     showToast('River renamed', 'success');
-  } catch (error) {
+  } catch (_error) {
     showToast('Failed to rename river', 'error');
   } finally {
     isRiverOperationLoading.value = false;
@@ -842,7 +947,7 @@ async function handleDeleteRiver(riverId: string) {
     const river = allRivers.value.find((r) => r.id === riverId);
     await deleteRiver(riverId);
     showToast(`Deleted "${river?.name}"`, 'success');
-  } catch (error) {
+  } catch (_error) {
     showToast('Failed to delete river', 'error');
   } finally {
     isRiverOperationLoading.value = false;
@@ -862,9 +967,9 @@ async function handleSendMessage(content: string, models: LLMModel[], webSearchE
     // If in new root mode, create a new root node (parentId = null)
     const parentId = isNewRootMode.value
       ? null
-      : (currentPath.value.length > 0
-          ? currentPath.value[currentPath.value.length - 1]?.id || null
-          : null);
+      : currentPath.value.length > 0
+        ? currentPath.value[currentPath.value.length - 1]?.id || null
+        : null;
 
     // Exit new root mode
     if (isNewRootMode.value) {
@@ -892,14 +997,14 @@ async function handleSendMessage(content: string, models: LLMModel[], webSearchE
     // streaming errors already surface on the node itself, and pre-stream
     // rejections are surfaced via toast.
     const results = await Promise.allSettled(
-      models.map(model => generateAIResponse(userNode.id, model, webSearchEnabled))
+      models.map((model) => generateAIResponse(userNode.id, model, webSearchEnabled))
     );
     notifyGenerationFailures(results, 'Failed to send message');
 
     // Onboarding tour: record AI response milestone
     tour.recordAIResponse();
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : 'Failed to send message', 'error');
+  } catch (_error) {
+    showToast(_error instanceof Error ? _error.message : 'Failed to send message', 'error');
   } finally {
     isSendingMessage.value = false;
   }
@@ -928,11 +1033,11 @@ async function handleResend(userNodeId: string, models: LLMModel[], webSearchEna
   try {
     // Generate AI responses directly from the existing user node (no new user node created)
     const results = await Promise.allSettled(
-      models.map(model => generateAIResponse(userNodeId, model, webSearchEnabled))
+      models.map((model) => generateAIResponse(userNodeId, model, webSearchEnabled))
     );
     notifyGenerationFailures(results, 'Failed to resend message');
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : 'Failed to resend message', 'error');
+  } catch (_error) {
+    showToast(_error instanceof Error ? _error.message : 'Failed to resend message', 'error');
   } finally {
     isSendingMessage.value = false;
   }
@@ -967,7 +1072,7 @@ async function handleRegenerate(parentNodeId: string) {
   try {
     showToast('Generating new response...', 'info');
     await generateAIResponse(parentNodeId, model, false);
-  } catch (error) {
+  } catch (_error) {
     showToast('Failed to regenerate response', 'error');
   }
 }
@@ -1007,9 +1112,7 @@ function confirmEditResubmit() {
 
   if (newContent !== node.content) {
     // Delete all children first
-    const children = Object.values(currentRiver.value.nodes).filter(
-      (n) => n.parentId === nodeId
-    );
+    const children = Object.values(currentRiver.value.nodes).filter((n) => n.parentId === nodeId);
     children.forEach((child) => deleteNode(child.id));
 
     // Update node content
@@ -1058,10 +1161,10 @@ function confirmDeleteBranchesBatch() {
     // Filter out nodes that are descendants of other nodes in the selection
     // This prevents trying to delete nodes that will already be deleted as descendants
     const nodeIdsSet = new Set(nodeIds);
-    const nodesToDelete = nodeIds.filter(nodeId => {
+    const nodesToDelete = nodeIds.filter((nodeId) => {
       const node = currentRiver.value!.nodes[nodeId];
       if (!node) return false;
-      
+
       // Check if any ancestor of this node is also in the selection
       let currentParentId = node.parentId;
       while (currentParentId) {
@@ -1074,16 +1177,16 @@ function confirmDeleteBranchesBatch() {
       }
       return true;
     });
-    
+
     // Delete only the top-level selected nodes (descendants will be deleted automatically)
-    nodesToDelete.forEach(nodeId => {
+    nodesToDelete.forEach((nodeId) => {
       deleteNode(nodeId);
     });
-    
+
     showToast(`Deleted ${nodeIds.length} nodes`, 'success');
   }
   deleteBatchConfirmation.value.isOpen = false;
-  
+
   // Clear multi-selection state to prevent chat window from showing
   hasMultipleNodesSelected.value = false;
 }
@@ -1100,7 +1203,9 @@ function handleUpdatePosition(nodeId: string, position: { x: number; y: number }
   updateNodePosition(nodeId, position);
 }
 
-function handleUpdatePositionsBatch(updates: Array<{ nodeId: string; position: { x: number; y: number } }>) {
+function handleUpdatePositionsBatch(
+  updates: Array<{ nodeId: string; position: { x: number; y: number } }>
+) {
   // Update all positions in a single batch to avoid multiple reactive updates
   updateNodePositionsBatch(updates);
 }
@@ -1120,19 +1225,30 @@ function handleSelectionChange(hasMultiple: boolean) {
   hasMultipleNodesSelected.value = hasMultiple;
 }
 
-async function handleBranchFromText(nodeId: string, highlightedText: string, userPrompt: string, models: LLMModel[], webSearchEnabled: boolean) {
+async function handleBranchFromText(
+  nodeId: string,
+  highlightedText: string,
+  userPrompt: string,
+  models: LLMModel[],
+  webSearchEnabled: boolean
+) {
   if (!currentRiver.value) return;
 
   isSendingMessage.value = true;
   try {
-    showToast(`Creating ${models.length} branch${models.length > 1 ? 'es' : ''} with selected context...`, 'info');
+    showToast(
+      `Creating ${models.length} branch${models.length > 1 ? 'es' : ''} with selected context...`,
+      'info'
+    );
     // Create branches for all selected models in parallel (errors isolated per model)
     const results = await Promise.allSettled(
-      models.map(model => branchFromText(nodeId, highlightedText, userPrompt, model, webSearchEnabled))
+      models.map((model) =>
+        branchFromText(nodeId, highlightedText, userPrompt, model, webSearchEnabled)
+      )
     );
     notifyGenerationFailures(results, 'Failed to create branch');
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : 'Failed to create branch', 'error');
+  } catch (_error) {
+    showToast(_error instanceof Error ? _error.message : 'Failed to create branch', 'error');
   } finally {
     isSendingMessage.value = false;
   }
@@ -1170,8 +1286,12 @@ function showToast(message: string, type: 'info' | 'success' | 'error' = 'info')
 
 // Check if any modal or overlay is currently open
 function isAnyModalOpen(): boolean {
-  return modals.isAnyOpen() ||
-         deleteConfirmation.value.isOpen || editConfirmation.value.isOpen || deleteBatchConfirmation.value.isOpen;
+  return (
+    modals.isAnyOpen() ||
+    deleteConfirmation.value.isOpen ||
+    editConfirmation.value.isOpen ||
+    deleteBatchConfirmation.value.isOpen
+  );
 }
 
 // Keyboard shortcuts (handler logic lives in useKeyboardShortcuts;
@@ -1186,7 +1306,9 @@ const keyboardShortcuts = useKeyboardShortcuts({
   isNewRootMode,
   isAnyModalOpen,
   selectNode,
-  clearPendingMessage: () => { pendingMessage.value = null; },
+  clearPendingMessage: () => {
+    pendingMessage.value = null;
+  },
   createRootNode: handleCreateRootNode,
   branchFrom: handleBranchFrom,
   regenerate: handleRegenerate,

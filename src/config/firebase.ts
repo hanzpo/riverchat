@@ -28,11 +28,13 @@ try {
   functions = getFunctions(app, import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || 'us-central1');
 
   // Initialize Analytics only if supported (not in SSR, extensions, etc.)
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  }).catch(() => {});
+  isSupported()
+    .then((supported) => {
+      if (supported) {
+        analytics = getAnalytics(app);
+      }
+    })
+    .catch(() => {});
 
   if (import.meta.env.DEV) {
     console.log('Firebase initialized successfully');

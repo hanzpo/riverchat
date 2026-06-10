@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full relative" style="background: var(--color-background-secondary);">
+  <div class="flex flex-col h-full relative" style="background: var(--color-background-secondary)">
     <!-- Text Highlight Popover (render at top level for proper positioning) -->
     <Teleport to="body">
       <TextHighlightPopover
@@ -10,15 +10,25 @@
     </Teleport>
 
     <!-- Floating Title Label -->
-    <div class="absolute top-4 left-4 z-10 px-3 py-2 rounded-lg shadow-lg" style="background: var(--color-background); border: 1px solid var(--color-border);">
-      <h2 class="text-xs font-semibold" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+    <div
+      class="absolute top-4 left-4 z-10 px-3 py-2 rounded-lg shadow-lg"
+      style="background: var(--color-background); border: 1px solid var(--color-border)"
+    >
+      <h2
+        class="text-xs font-semibold"
+        style="color: var(--color-text-primary); letter-spacing: -0.01em"
+      >
         {{ isNewRootMode ? 'New Thread' : 'Chat' }}
       </h2>
     </div>
 
     <!-- Floating Message Count -->
-    <div v-if="!isNewRootMode" class="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 px-3 py-2 rounded-lg shadow-lg" style="background: var(--color-background); border: 1px solid var(--color-border);">
-      <div class="text-[10px] font-medium" style="color: var(--color-text-tertiary);">
+    <div
+      v-if="!isNewRootMode"
+      class="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 px-3 py-2 rounded-lg shadow-lg"
+      style="background: var(--color-background); border: 1px solid var(--color-border)"
+    >
+      <div class="text-[10px] font-medium" style="color: var(--color-text-tertiary)">
         {{ path.length }} message{{ path.length !== 1 ? 's' : '' }}
       </div>
     </div>
@@ -28,30 +38,66 @@
       <button
         @click="$emit('pop-out')"
         class="p-2 rounded-lg transition-all shadow-lg hover:opacity-80"
-        style="background: var(--color-background); border: 1px solid var(--color-border); color: var(--color-text-secondary); cursor: pointer;"
+        style="
+          background: var(--color-background);
+          border: 1px solid var(--color-border);
+          color: var(--color-text-secondary);
+          cursor: pointer;
+        "
         title="Pop out chat"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"
+          />
+          <path
+            d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"
+          />
         </svg>
       </button>
       <button
         @click="$emit('close')"
         class="p-2 rounded-lg transition-all shadow-lg hover:opacity-80"
-        style="background: var(--color-background); border: 1px solid var(--color-border); color: var(--color-text-secondary); cursor: pointer;"
+        style="
+          background: var(--color-background);
+          border: 1px solid var(--color-border);
+          color: var(--color-text-secondary);
+          cursor: pointer;
+        "
         title="Close chat"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-4 w-4"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+          />
         </svg>
       </button>
     </div>
 
     <!-- Messages -->
-    <div ref="messagesContainer" role="log" aria-live="polite" class="flex-1 overflow-y-auto p-4 pt-16">
-      <div v-if="path.length === 0 && !isNewRootMode" class="flex items-center justify-center h-full px-5 py-10">
-        <p class="text-xs text-center font-medium" style="color: var(--color-text-tertiary);">
+    <div
+      ref="messagesContainer"
+      role="log"
+      aria-live="polite"
+      class="flex-1 overflow-y-auto p-4 pt-16"
+    >
+      <div
+        v-if="path.length === 0 && !isNewRootMode"
+        class="flex items-center justify-center h-full px-5 py-10"
+      >
+        <p class="text-xs text-center font-medium" style="color: var(--color-text-tertiary)">
           Type a message into the chat to create a new thread
         </p>
       </div>
@@ -59,10 +105,13 @@
       <div v-if="isNewRootMode" class="flex items-center justify-center h-full px-5 py-10">
         <div class="text-center">
           <div class="text-4xl mb-4">🌊</div>
-          <p class="text-sm font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+          <p
+            class="text-sm font-semibold mb-2"
+            style="color: var(--color-text-primary); letter-spacing: -0.01em"
+          >
             Start a New Thread
           </p>
-          <p class="text-xs font-medium" style="color: var(--color-text-tertiary);">
+          <p class="text-xs font-medium" style="color: var(--color-text-tertiary)">
             This will create a new root conversation node. Type your message below to begin.
           </p>
         </div>
@@ -76,7 +125,8 @@
           :class="{
             'bg-primary/20 border-primary/40': message.type === 'user',
             'bg-secondary/20 border-secondary/40': message.type === 'ai',
-            'border-2 border-primary shadow-[0_0_0_3px] shadow-primary/30': message.id === selectedNodeId,
+            'border-2 border-primary shadow-[0_0_0_3px] shadow-primary/30':
+              message.id === selectedNodeId,
           }"
           @click.stop="$emit('node-select', message.id)"
         >
@@ -85,7 +135,11 @@
             <div class="flex items-center gap-2">
               <span
                 class="text-[10.5px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border flex items-center gap-1.5"
-                :class="message.type === 'user' ? 'bg-primary/30 border-primary/50 text-primary' : 'bg-secondary/30 border-secondary/50 text-secondary'"
+                :class="
+                  message.type === 'user'
+                    ? 'bg-primary/30 border-primary/50 text-primary'
+                    : 'bg-secondary/30 border-secondary/50 text-secondary'
+                "
               >
                 <User v-if="message.type === 'user'" :size="12" />
                 <Bot v-else :size="12" />
@@ -100,15 +154,25 @@
                 <span>{{ getBranchCount(message.id, props.allNodes) }}</span>
               </span>
             </div>
-            <span v-if="message.model" class="text-[11px] font-medium text-white/75 overflow-hidden text-ellipsis whitespace-nowrap">
+            <span
+              v-if="message.model"
+              class="text-[11px] font-medium text-white/75 overflow-hidden text-ellipsis whitespace-nowrap"
+            >
               {{ message.model.name }}
             </span>
           </div>
 
           <!-- Branch Metadata (if this message is a branch) -->
-          <div v-if="message.branchMetadata" class="mb-2 p-2.5 bg-accent/10 border border-accent/30 rounded-lg">
-            <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">Selected Text</div>
-            <div class="text-[12px] text-white/75 italic font-medium pl-2 border-l-2 border-accent/50">
+          <div
+            v-if="message.branchMetadata"
+            class="mb-2 p-2.5 bg-accent/10 border border-accent/30 rounded-lg"
+          >
+            <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1.5">
+              Selected Text
+            </div>
+            <div
+              class="text-[12px] text-white/75 italic font-medium pl-2 border-l-2 border-accent/50"
+            >
               "{{ message.branchMetadata.highlightedText }}"
             </div>
           </div>
@@ -119,7 +183,11 @@
             @mouseup.stop="handleTextSelection($event, message.id)"
           >
             <div v-html="renderMarkdown(message.content || '...')"></div>
-            <span v-if="message.state === 'generating'" class="inline-block animate-blink text-info font-bold">▊</span>
+            <span
+              v-if="message.state === 'generating'"
+              class="inline-block animate-blink text-info font-bold"
+              >▊</span
+            >
           </div>
 
           <!-- Footer -->
@@ -127,7 +195,10 @@
             <span class="font-medium">
               {{ formatTime(message.timestamp) }}
             </span>
-            <span v-if="message.state === 'error'" class="error-badge-wrapper relative text-error font-bold flex items-center gap-1">
+            <span
+              v-if="message.state === 'error'"
+              class="error-badge-wrapper relative text-error font-bold flex items-center gap-1"
+            >
               <AlertTriangle :size="12" />
               <span>Error</span>
               <span v-if="message.error" class="error-tooltip">{{ message.error }}</span>
@@ -139,22 +210,32 @@
         <div
           v-if="showMultiModelPrompt"
           class="p-3 rounded-lg text-center animate-fade-in"
-          style="background: rgba(13, 153, 255, 0.08); border: 1px solid rgba(13, 153, 255, 0.2);"
+          style="background: rgba(13, 153, 255, 0.08); border: 1px solid rgba(13, 153, 255, 0.2)"
         >
-          <p class="text-xs font-medium mb-2" style="color: var(--color-primary);">
+          <p class="text-xs font-medium mb-2" style="color: var(--color-primary)">
             Want to see how another AI answers?
           </p>
           <button
-            @click="addModelSlot(); multiModelPromptDismissed = true; chatAnalytics.capture('multi_model_prompt_clicked')"
+            @click="
+              addModelSlot();
+              multiModelPromptDismissed = true;
+              chatAnalytics.capture('multi_model_prompt_clicked');
+            "
             class="btn-material text-xs"
-            style="padding: 5px 12px; font-weight: 600; background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);"
+            style="
+              padding: 5px 12px;
+              font-weight: 600;
+              background: var(--color-primary-muted);
+              color: var(--color-primary);
+              border-color: var(--color-primary);
+            "
           >
             + Add a second model
           </button>
           <button
             @click="multiModelPromptDismissed = true"
             class="block mx-auto mt-1 text-[10px] bg-transparent border-none cursor-pointer"
-            style="color: var(--color-text-tertiary);"
+            style="color: var(--color-text-tertiary)"
           >
             Dismiss
           </button>
@@ -164,26 +245,38 @@
         <div
           v-if="showUpgradeNudge"
           class="p-3 rounded-lg animate-fade-in"
-          style="background: rgba(162, 89, 255, 0.08); border: 1px solid rgba(162, 89, 255, 0.2);"
+          style="background: rgba(162, 89, 255, 0.08); border: 1px solid rgba(162, 89, 255, 0.2)"
         >
-          <p class="text-xs font-medium mb-1" style="color: var(--color-accent);">
+          <p class="text-xs font-medium mb-1" style="color: var(--color-accent)">
             This response used {{ lastAIModelName }}.
           </p>
-          <p class="text-[11px] mb-2" style="color: var(--color-text-secondary);">
+          <p class="text-[11px] mb-2" style="color: var(--color-text-secondary)">
             Try premium models like Claude or GPT-5 with Pro.
           </p>
           <div class="flex items-center gap-2">
             <button
-              @click="chatAnalytics.capture('upgrade_prompt_clicked', { source: 'post_response', target_tier: 'pro' }); subscription.upgradeToTier('pro')"
+              @click="
+                chatAnalytics.capture('upgrade_prompt_clicked', {
+                  source: 'post_response',
+                  target_tier: 'pro',
+                });
+                subscription.upgradeToTier('pro');
+              "
               class="btn-material text-xs"
-              style="padding: 5px 12px; font-weight: 600; background: rgba(162, 89, 255, 0.15); color: var(--color-accent); border-color: rgba(162, 89, 255, 0.3);"
+              style="
+                padding: 5px 12px;
+                font-weight: 600;
+                background: rgba(162, 89, 255, 0.15);
+                color: var(--color-accent);
+                border-color: rgba(162, 89, 255, 0.3);
+              "
             >
               Upgrade to Pro
             </button>
             <button
               @click="upgradeNudgeDismissed = true"
               class="text-[10px] bg-transparent border-none cursor-pointer"
-              style="color: var(--color-text-tertiary);"
+              style="color: var(--color-text-tertiary)"
             >
               Dismiss
             </button>
@@ -200,7 +293,16 @@
       description="Search the web during AI responses for up-to-date information."
       target-tier="pro"
       @close="webSearchUpgrade.visible = false"
-      @upgrade="(tier: 'pro' | 'max') => { webSearchUpgrade.visible = false; chatAnalytics.capture('upgrade_prompt_clicked', { source: 'web_search', target_tier: tier }); subscription.upgradeToTier(tier); }"
+      @upgrade="
+        (tier: 'pro' | 'max') => {
+          webSearchUpgrade.visible = false;
+          chatAnalytics.capture('upgrade_prompt_clicked', {
+            source: 'web_search',
+            target_tier: tier,
+          });
+          subscription.upgradeToTier(tier);
+        }
+      "
     />
 
     <!-- Input Area -->
@@ -230,7 +332,6 @@
         @clear-branch-context="clearBranchContext"
       />
     </div>
-
   </div>
 </template>
 
@@ -260,7 +361,14 @@ interface Props {
 interface Emits {
   (e: 'send', content: string, models: LLMModel[], webSearchEnabled: boolean): void;
   (e: 'node-select', nodeId: string): void;
-  (e: 'branch-from-text', nodeId: string, highlightedText: string, elaborationPrompt: string, models: LLMModel[], webSearchEnabled: boolean): void;
+  (
+    e: 'branch-from-text',
+    nodeId: string,
+    highlightedText: string,
+    elaborationPrompt: string,
+    models: LLMModel[],
+    webSearchEnabled: boolean
+  ): void;
   (e: 'chat-model-changed', modelIds: string[]): void;
   (e: 'close'): void;
   (e: 'pop-out'): void;
@@ -275,7 +383,9 @@ const MULTI_MODEL_PROMPT_DISMISSED_KEY = 'riverchat:multiModelPromptDismissed';
 const UPGRADE_NUDGE_DISMISSED_KEY = 'riverchat:upgradeNudgeDismissed';
 
 // Multi-model prompt: show once after first AI response with single model
-const multiModelPromptDismissed = ref(localStorage.getItem(MULTI_MODEL_PROMPT_DISMISSED_KEY) === 'true');
+const multiModelPromptDismissed = ref(
+  localStorage.getItem(MULTI_MODEL_PROMPT_DISMISSED_KEY) === 'true'
+);
 watch(multiModelPromptDismissed, (dismissed) => {
   if (dismissed) localStorage.setItem(MULTI_MODEL_PROMPT_DISMISSED_KEY, 'true');
 });
@@ -283,7 +393,7 @@ const showMultiModelPrompt = computed(() => {
   if (multiModelPromptDismissed.value) return false;
   if (props.settings?.hasSeenMultiModelPrompt) return false;
   // Show after first AI response when user has only 1 model selected
-  const hasAIResponse = props.path.some(m => m.type === 'ai' && m.state === 'complete');
+  const hasAIResponse = props.path.some((m) => m.type === 'ai' && m.state === 'complete');
   return hasAIResponse && selectedModelIds.value.length === 1;
 });
 
@@ -296,12 +406,14 @@ const showUpgradeNudge = computed(() => {
   if (upgradeNudgeDismissed.value) return false;
   if (subscription.tier.value !== 'free') return false;
   // Show after the 2nd completed AI response
-  const completedAI = props.path.filter(m => m.type === 'ai' && m.state === 'complete');
+  const completedAI = props.path.filter((m) => m.type === 'ai' && m.state === 'complete');
   return completedAI.length >= 2;
 });
 const lastAIModelName = computed(() => {
-  const aiMessages = props.path.filter(m => m.type === 'ai' && m.state === 'complete');
-  return aiMessages.length > 0 ? aiMessages[aiMessages.length - 1]?.model?.name ?? 'this model' : 'this model';
+  const aiMessages = props.path.filter((m) => m.type === 'ai' && m.state === 'complete');
+  return aiMessages.length > 0
+    ? (aiMessages[aiMessages.length - 1]?.model?.name ?? 'this model')
+    : 'this model';
 });
 
 const {
@@ -340,8 +452,9 @@ const {
 );
 
 // Whether to show the resend UI instead of the normal input
-const resendMode = computed(() =>
-  !canSend.value && !props.isNewRootMode && props.path.length > 0 && !!selectedUserMessage.value
+const resendMode = computed(
+  () =>
+    !canSend.value && !props.isNewRootMode && props.path.length > 0 && !!selectedUserMessage.value
 );
 
 // Wire the input area's textarea element into the chat panel composable
@@ -354,7 +467,8 @@ watchEffect(() => {
 watch(
   [() => props.isNewRootMode, () => props.selectedNodeId, () => props.path, canSend],
   async () => {
-    const shouldFocus = props.isNewRootMode || (canSend.value && !props.isNewRootMode && props.path.length > 0);
+    const shouldFocus =
+      props.isNewRootMode || (canSend.value && !props.isNewRootMode && props.path.length > 0);
     if (shouldFocus) {
       await nextTick();
       requestAnimationFrame(() => {

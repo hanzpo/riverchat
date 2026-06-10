@@ -1,8 +1,13 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* Set global font family - Notion-like */
 * {
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  font-family:
+    'Segoe UI',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Helvetica Neue',
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -15,25 +20,25 @@
   --color-primary-muted: #0d99ff1a;
   --color-accent: #a259ff;
   --color-accent-hover: #8a3fff;
-  
+
   /* Background Colors - Refined dark grays */
   --color-background: #0e0e0e;
   --color-background-secondary: #1a1a1a;
   --color-background-tertiary: #2c2c2c;
   --color-background-elevated: #242424;
   --color-background-hover: #2e2e2e;
-  
+
   /* Border Colors */
   --color-border: #333333;
   --color-border-light: #404040;
   --color-border-strong: #525252;
-  
+
   /* Text Colors */
   --color-text-primary: #ffffff;
   --color-text-secondary: #b3b3b3;
   --color-text-tertiary: #8c8c8c;
   --color-text-disabled: #5c5c5c;
-  
+
   /* Status Colors */
   --color-success: #14ae5c;
   --color-success-bg: #14ae5c1a;
@@ -43,18 +48,18 @@
   --color-warning-bg: #ffb02e1a;
   --color-info: #0d99ff;
   --color-info-bg: #0d99ff1a;
-  
+
   /* Shadows - Subtle and refined */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 2px 4px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 4px 8px 0 rgba(0, 0, 0, 0.5), 0 2px 4px 0 rgba(0, 0, 0, 0.4);
   --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.6), 0 4px 8px 0 rgba(0, 0, 0, 0.5);
   --shadow-2xl: 0 16px 32px 0 rgba(0, 0, 0, 0.7), 0 8px 16px 0 rgba(0, 0, 0, 0.6);
-  
+
   /* Easing */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Animations */
   --animate-fadeIn: fadeIn 0.15s var(--ease-in-out);
   --animate-slideUp: slideUp 0.2s var(--ease-out-expo);
@@ -62,8 +67,12 @@
 
 /* Keyframe Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {

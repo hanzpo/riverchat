@@ -96,7 +96,9 @@ export class LLMAPIService {
       try {
         const response = await fetch(url, { ...init, signal });
         if (response.status >= 500 && attempt < MAX_FETCH_ATTEMPTS) {
-          console.warn(`[LLM] Got ${response.status}, retrying (attempt ${attempt}/${MAX_FETCH_ATTEMPTS})`);
+          console.warn(
+            `[LLM] Got ${response.status}, retrying (attempt ${attempt}/${MAX_FETCH_ATTEMPTS})`
+          );
           await this.delay(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1));
           continue;
         }
@@ -106,7 +108,10 @@ export class LLMAPIService {
         if (error instanceof DOMException && error.name === 'AbortError') throw error;
         lastError = error;
         if (attempt < MAX_FETCH_ATTEMPTS) {
-          console.warn(`[LLM] Network error, retrying (attempt ${attempt}/${MAX_FETCH_ATTEMPTS}):`, error);
+          console.warn(
+            `[LLM] Network error, retrying (attempt ${attempt}/${MAX_FETCH_ATTEMPTS}):`,
+            error
+          );
           await this.delay(RETRY_BASE_DELAY_MS * 2 ** (attempt - 1));
         }
       }
@@ -118,9 +123,12 @@ export class LLMAPIService {
   /** Validate the proxy's usage payload and return a well-typed object (or undefined). */
   private static parseUsagePayload(parsed: any): UsageMetadata | undefined {
     if (
-      typeof parsed.cost !== 'number' || !Number.isFinite(parsed.cost) ||
-      typeof parsed.promptTokens !== 'number' || !Number.isFinite(parsed.promptTokens) ||
-      typeof parsed.completionTokens !== 'number' || !Number.isFinite(parsed.completionTokens)
+      typeof parsed.cost !== 'number' ||
+      !Number.isFinite(parsed.cost) ||
+      typeof parsed.promptTokens !== 'number' ||
+      !Number.isFinite(parsed.promptTokens) ||
+      typeof parsed.completionTokens !== 'number' ||
+      !Number.isFinite(parsed.completionTokens)
     ) {
       console.warn('[LLM] Ignoring malformed usage payload:', parsed);
       return undefined;
@@ -183,7 +191,9 @@ export class LLMAPIService {
         return;
       }
 
-      console.log(`[LLM] Streaming via proxy: ${model.id}${webSearchEnabled ? ' with web search' : ''}`);
+      console.log(
+        `[LLM] Streaming via proxy: ${model.id}${webSearchEnabled ? ' with web search' : ''}`
+      );
 
       const response = await this.fetchWithRetry(
         STREAM_CHAT_URL,
@@ -191,7 +201,7 @@ export class LLMAPIService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
             model: model.id,

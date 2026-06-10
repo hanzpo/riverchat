@@ -147,7 +147,6 @@
             </div>
           </div>
 
-
           <!-- Panel Controls -->
           <div class="shortcuts-section">
             <h3 class="section-title">Panel Controls</h3>
@@ -176,16 +175,20 @@
             <h3 class="section-title">💡 Tips</h3>
             <div class="tips-list">
               <div class="tip-item">
-                <strong>Multi-select:</strong> Hold <kbd>{{ ctrlKey }}</kbd> and click nodes to select multiple, then use context menu to delete all at once.
+                <strong>Multi-select:</strong> Hold <kbd>{{ ctrlKey }}</kbd> and click nodes to
+                select multiple, then use context menu to delete all at once.
               </div>
               <div class="tip-item">
-                <strong>Quick branch:</strong> Right-click any node to see available actions in the context menu.
+                <strong>Quick branch:</strong> Right-click any node to see available actions in the
+                context menu.
               </div>
               <div class="tip-item">
-                <strong>Text branching:</strong> Select text in any message to create a new branch exploring that specific part.
+                <strong>Text branching:</strong> Select text in any message to create a new branch
+                exploring that specific part.
               </div>
               <div class="tip-item">
-                <strong>Resize panel:</strong> Drag the left edge of the chat panel to resize it to your preference.
+                <strong>Resize panel:</strong> Drag the left edge of the chat panel to resize it to
+                your preference.
               </div>
             </div>
           </div>
@@ -333,7 +336,11 @@ kbd {
   border: 1px solid var(--color-border-light);
   border-radius: 4px;
   padding: 4px 8px;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Inter',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-primary);

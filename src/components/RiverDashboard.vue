@@ -2,10 +2,13 @@
   <div v-if="isOpen" class="modal-backdrop z-[200]" @click.self="emit('close')">
     <div class="modal-content w-[700px] max-h-[80vh] p-8 flex flex-col">
       <div class="mb-6">
-        <h2 class="text-xl font-semibold mb-2" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+        <h2
+          class="text-xl font-semibold mb-2"
+          style="color: var(--color-text-primary); letter-spacing: -0.01em"
+        >
           Your Rivers
         </h2>
-        <p class="text-sm font-medium" style="color: var(--color-text-secondary);">
+        <p class="text-sm font-medium" style="color: var(--color-text-secondary)">
           Manage your conversation sessions
         </p>
       </div>
@@ -24,7 +27,7 @@
             @click="handleCreateRiver"
             :disabled="!newRiverName.trim() || isLoading"
             class="btn-material px-5 py-2.5 whitespace-nowrap flex items-center justify-center gap-3"
-            style="min-width: 140px;"
+            style="min-width: 140px"
           >
             <div v-if="isLoading" class="loading-spinner-small"></div>
             <span>{{ isLoading ? 'Creating...' : '+ New River' }}</span>
@@ -34,9 +37,15 @@
 
       <!-- Rivers List -->
       <div class="flex-1 overflow-y-auto min-h-[200px] overflow-x-visible">
-        <div v-if="rivers.length === 0" class="text-center py-15 px-5" style="color: var(--color-text-secondary);">
+        <div
+          v-if="rivers.length === 0"
+          class="text-center py-15 px-5"
+          style="color: var(--color-text-secondary)"
+        >
           <p class="text-sm mb-2 font-medium">No rivers yet</p>
-          <p class="text-xs font-medium" style="color: var(--color-text-tertiary);">Create your first conversation river above</p>
+          <p class="text-xs font-medium" style="color: var(--color-text-tertiary)">
+            Create your first conversation river above
+          </p>
         </div>
 
         <div v-else class="flex flex-col gap-3">
@@ -49,37 +58,59 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1.5">
                 <!-- Inline rename input -->
-                <div v-if="editingRiverId === river.id" class="flex items-center gap-2 flex-1" @click.stop>
+                <div
+                  v-if="editingRiverId === river.id"
+                  class="flex items-center gap-2 flex-1"
+                  @click.stop
+                >
                   <input
                     ref="renameInput"
                     v-model="editingRiverName"
                     type="text"
                     class="input-material text-sm font-semibold"
-                    style="padding: 2px 8px; height: 28px;"
+                    style="padding: 2px 8px; height: 28px"
                     @keyup.enter="confirmRename"
                     @keyup.escape="cancelRename"
                     @blur="confirmRename"
                   />
-                  <button @mousedown.prevent="confirmRename" class="btn-material" style="padding: 4px 6px;" title="Save">
+                  <button
+                    @mousedown.prevent="confirmRename"
+                    class="btn-material"
+                    style="padding: 4px 6px"
+                    title="Save"
+                  >
                     <Check :size="14" />
                   </button>
-                  <button @mousedown.prevent="cancelRename" class="btn-material" style="padding: 4px 6px;" title="Cancel">
+                  <button
+                    @mousedown.prevent="cancelRename"
+                    class="btn-material"
+                    style="padding: 4px 6px"
+                    title="Cancel"
+                  >
                     <X :size="14" />
                   </button>
                 </div>
                 <!-- Normal river name display -->
-                <h3 v-else class="text-sm font-semibold overflow-hidden text-ellipsis whitespace-nowrap" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+                <h3
+                  v-else
+                  class="text-sm font-semibold overflow-hidden text-ellipsis whitespace-nowrap"
+                  style="color: var(--color-text-primary); letter-spacing: -0.01em"
+                >
                   {{ river.name }}
                 </h3>
                 <span
                   v-if="river.id === activeRiverId && editingRiverId !== river.id"
                   class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide"
-                  style="background: var(--color-success-bg); color: var(--color-success); border: 1px solid var(--color-success);"
+                  style="
+                    background: var(--color-success-bg);
+                    color: var(--color-success);
+                    border: 1px solid var(--color-success);
+                  "
                 >
                   Active
                 </span>
               </div>
-              <div class="flex gap-4 text-xs font-medium" style="color: var(--color-text-tertiary);">
+              <div class="flex gap-4 text-xs font-medium" style="color: var(--color-text-tertiary)">
                 <span>{{ formatDate(river.lastModified) }}</span>
                 <span>{{ getNodeCount(river) }} nodes</span>
               </div>
@@ -90,7 +121,7 @@
                 @click="handleRenameRiver(river)"
                 :disabled="isLoading"
                 class="btn-material"
-                style="padding: 6px 10px; font-size: 12px;"
+                style="padding: 6px 10px; font-size: 12px"
                 title="Rename"
               >
                 <Pencil :size="14" />
@@ -99,7 +130,7 @@
                 @click="handleDeleteRiver(river)"
                 :disabled="isLoading"
                 class="btn-material"
-                style="padding: 6px 10px; font-size: 12px;"
+                style="padding: 6px 10px; font-size: 12px"
                 title="Delete"
               >
                 <Trash2 :size="14" />
@@ -110,17 +141,21 @@
       </div>
 
       <!-- Close Button -->
-      <div class="flex justify-end mt-5 pt-5" style="border-top: 1px solid var(--color-border);">
-        <button @click="emit('close')" class="btn-material" style="padding: 8px 16px;">
-          Close
-        </button>
+      <div class="flex justify-end mt-5 pt-5" style="border-top: 1px solid var(--color-border)">
+        <button @click="emit('close')" class="btn-material" style="padding: 8px 16px">Close</button>
       </div>
 
       <!-- Loading Overlay -->
-      <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center rounded-lg" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px);">
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <div class="loading-spinner" style="margin-bottom: 20px;"></div>
-          <p class="text-sm font-semibold" style="color: var(--color-text-primary);">Processing...</p>
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 flex items-center justify-center rounded-lg"
+        style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px)"
+      >
+        <div style="display: flex; flex-direction: column; align-items: center">
+          <div class="loading-spinner" style="margin-bottom: 20px"></div>
+          <p class="text-sm font-semibold" style="color: var(--color-text-primary)">
+            Processing...
+          </p>
         </div>
       </div>
     </div>
@@ -213,7 +248,7 @@ function handleRenameRiver(river: River) {
 function confirmRename() {
   if (!editingRiverId.value) return;
   const trimmed = editingRiverName.value.trim();
-  const river = props.rivers.find(r => r.id === editingRiverId.value);
+  const river = props.rivers.find((r) => r.id === editingRiverId.value);
   if (trimmed && river && trimmed !== river.name) {
     emit('rename', editingRiverId.value, trimmed);
   }
@@ -257,7 +292,7 @@ function formatDate(dateString: string): string {
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
-  
+
   return date.toLocaleDateString();
 }
 

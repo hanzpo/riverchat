@@ -14,28 +14,41 @@
           <div class="flex items-center gap-2.5 mb-2.5">
             <span
               class="px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wide"
-              :style="message.type === 'user'
-                ? 'background: var(--color-primary-muted); color: var(--color-primary); border: 1px solid var(--color-primary);'
-                : 'background: rgba(162, 89, 255, 0.1); color: var(--color-accent); border: 1px solid var(--color-accent);'"
+              :style="
+                message.type === 'user'
+                  ? 'background: var(--color-primary-muted); color: var(--color-primary); border: 1px solid var(--color-primary);'
+                  : 'background: rgba(162, 89, 255, 0.1); color: var(--color-accent); border: 1px solid var(--color-accent);'
+              "
             >
               {{ message.type === 'user' ? 'USER' : 'AI' }}
             </span>
-            <span v-if="message.model" class="text-xs font-medium" style="color: var(--color-text-secondary);">
+            <span
+              v-if="message.model"
+              class="text-xs font-medium"
+              style="color: var(--color-text-secondary)"
+            >
               {{ message.model.name }}
             </span>
           </div>
-          <p class="text-xs font-medium" style="color: var(--color-text-tertiary);">
+          <p class="text-xs font-medium" style="color: var(--color-text-tertiary)">
             {{ formatTimestamp(message.timestamp) }}
           </p>
         </div>
 
-        <button @click="handleCopy" class="btn-material flex items-center gap-1.5" style="padding: 8px 14px;">
+        <button
+          @click="handleCopy"
+          class="btn-material flex items-center gap-1.5"
+          style="padding: 8px 14px"
+        >
           <span class="font-medium text-xs">{{ copied ? 'Copied!' : 'Copy' }}</span>
         </button>
       </div>
 
       <!-- Message Content -->
-      <div class="card-material p-6 break-words leading-relaxed text-sm markdown-content" style="color: var(--color-text-primary);">
+      <div
+        class="card-material p-6 break-words leading-relaxed text-sm markdown-content"
+        style="color: var(--color-text-primary)"
+      >
         <div v-html="renderMarkdown(message.content)"></div>
       </div>
 
@@ -43,21 +56,17 @@
       <div
         v-if="message.state === 'error' && message.error"
         class="mt-4 rounded-lg p-4"
-        style="background: var(--color-error-bg); border: 1px solid var(--color-error);"
+        style="background: var(--color-error-bg); border: 1px solid var(--color-error)"
       >
-        <p class="text-xs font-semibold mb-1.5" style="color: var(--color-error);">
-          Error:
-        </p>
-        <p class="text-xs font-medium" style="color: var(--color-error);">
+        <p class="text-xs font-semibold mb-1.5" style="color: var(--color-error)">Error:</p>
+        <p class="text-xs font-medium" style="color: var(--color-error)">
           {{ message.error }}
         </p>
       </div>
 
       <!-- Close Button -->
       <div class="flex justify-end mt-6">
-        <button @click="emit('close')" class="btn-material" style="padding: 8px 16px;">
-          Close
-        </button>
+        <button @click="emit('close')" class="btn-material" style="padding: 8px 16px">Close</button>
       </div>
     </div>
   </div>
@@ -89,15 +98,18 @@ const modalEl = ref<HTMLElement | null>(null);
 useModalA11y(() => props.isOpen, modalEl);
 
 // Reset copied state when modal closes
-watch(() => props.isOpen, (open) => {
-  if (!open) {
-    copied.value = false;
-    if (copyTimeout) {
-      clearTimeout(copyTimeout);
-      copyTimeout = null;
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (!open) {
+      copied.value = false;
+      if (copyTimeout) {
+        clearTimeout(copyTimeout);
+        copyTimeout = null;
+      }
     }
   }
-});
+);
 
 onUnmounted(() => {
   if (copyTimeout) {
@@ -112,7 +124,7 @@ function formatTimestamp(timestamp: number): string {
 }
 
 async function handleCopy() {
-  if (props.message && await copyToClipboard(props.message.content)) {
+  if (props.message && (await copyToClipboard(props.message.content))) {
     copied.value = true;
     if (copyTimeout) clearTimeout(copyTimeout);
     copyTimeout = setTimeout(() => {
@@ -146,10 +158,18 @@ async function handleCopy() {
   line-height: 1.3;
 }
 
-.markdown-content :deep(h1) { font-size: 1.5em; }
-.markdown-content :deep(h2) { font-size: 1.3em; }
-.markdown-content :deep(h3) { font-size: 1.15em; }
-.markdown-content :deep(h4) { font-size: 1.05em; }
+.markdown-content :deep(h1) {
+  font-size: 1.5em;
+}
+.markdown-content :deep(h2) {
+  font-size: 1.3em;
+}
+.markdown-content :deep(h3) {
+  font-size: 1.15em;
+}
+.markdown-content :deep(h4) {
+  font-size: 1.05em;
+}
 
 .markdown-content :deep(code) {
   background: var(--color-background-tertiary);

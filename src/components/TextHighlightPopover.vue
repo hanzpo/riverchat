@@ -97,4 +97,3 @@ defineEmits<Emits>();
   letter-spacing: 0.02em;
 }
 </style>
-

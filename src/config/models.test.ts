@@ -33,15 +33,15 @@ describe('FALLBACK_MODELS', () => {
 
   it('pricing includes 1.5x markup over base prices', () => {
     // Verify the first budget model (Llama 4 Scout)
-    const scout = FALLBACK_MODELS.find(m => m.id === 'meta-llama/llama-4-scout')!;
+    const scout = FALLBACK_MODELS.find((m) => m.id === 'meta-llama/llama-4-scout')!;
     expect(scout).toBeDefined();
     // Base: [0.08, 0.30], Markup: [0.12, 0.45]
     expect(scout.pricing.prompt).toBeCloseTo(0.08 * MARKUP, 4);
-    expect(scout.pricing.completion).toBeCloseTo(0.30 * MARKUP, 4);
+    expect(scout.pricing.completion).toBeCloseTo(0.3 * MARKUP, 4);
   });
 
   it('all model IDs are unique', () => {
-    const ids = FALLBACK_MODELS.map(m => m.id);
+    const ids = FALLBACK_MODELS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -52,18 +52,18 @@ describe('FALLBACK_MODELS', () => {
   });
 
   it('frontier models are the most expensive', () => {
-    const frontier = FALLBACK_MODELS.filter(m => m.category === 'frontier');
-    const nonFrontier = FALLBACK_MODELS.filter(m => m.category !== 'frontier');
-    const maxNonFrontierCompletion = Math.max(...nonFrontier.map(m => m.pricing.completion));
-    const minFrontierCompletion = Math.min(...frontier.map(m => m.pricing.completion));
+    const frontier = FALLBACK_MODELS.filter((m) => m.category === 'frontier');
+    const nonFrontier = FALLBACK_MODELS.filter((m) => m.category !== 'frontier');
+    const maxNonFrontierCompletion = Math.max(...nonFrontier.map((m) => m.pricing.completion));
+    const minFrontierCompletion = Math.min(...frontier.map((m) => m.pricing.completion));
     expect(minFrontierCompletion).toBeGreaterThan(maxNonFrontierCompletion);
   });
 
   it('budget models are the cheapest', () => {
-    const budget = FALLBACK_MODELS.filter(m => m.category === 'budget');
-    const nonBudget = FALLBACK_MODELS.filter(m => m.category !== 'budget');
-    const maxBudgetCompletion = Math.max(...budget.map(m => m.pricing.completion));
-    const minNonBudgetCompletion = Math.min(...nonBudget.map(m => m.pricing.completion));
+    const budget = FALLBACK_MODELS.filter((m) => m.category === 'budget');
+    const nonBudget = FALLBACK_MODELS.filter((m) => m.category !== 'budget');
+    const maxBudgetCompletion = Math.max(...budget.map((m) => m.pricing.completion));
+    const minNonBudgetCompletion = Math.min(...nonBudget.map((m) => m.pricing.completion));
     expect(maxBudgetCompletion).toBeLessThanOrEqual(minNonBudgetCompletion);
   });
 });

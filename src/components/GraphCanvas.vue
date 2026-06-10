@@ -152,7 +152,10 @@ interface Emits {
   (e: 'delete-branches-batch', nodeIds: string[]): void;
   (e: 'copy-message', content: string): void;
   (e: 'update-position', nodeId: string, position: { x: number; y: number }): void;
-  (e: 'update-positions-batch', updates: Array<{ nodeId: string; position: { x: number; y: number } }>): void;
+  (
+    e: 'update-positions-batch',
+    updates: Array<{ nodeId: string; position: { x: number; y: number } }>
+  ): void;
   (e: 'create-root-node'): void;
   (e: 'pane-click'): void;
   (e: 'selection-change', hasMultipleSelected: boolean): void;
@@ -161,7 +164,16 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const { getSelectedNodes, project, vueFlowRef, zoomIn, zoomOut, fitView, addSelectedNodes, findNode } = useVueFlow();
+const {
+  getSelectedNodes,
+  project,
+  vueFlowRef,
+  zoomIn,
+  zoomOut,
+  fitView,
+  addSelectedNodes,
+  findNode,
+} = useVueFlow();
 
 // Track nodes being dragged to batch position updates
 const draggedNodes = ref<Set<string>>(new Set());
@@ -249,23 +261,23 @@ const flowNodes = ref<VueFlowNode[]>([]);
 function syncFlowNodes() {
   // Don't sync during drag to avoid interfering with VueFlow's position management
   if (isDragging.value) return;
-  
+
   const nodeMap = props.nodes;
-  
+
   // Calculate positions - use stored positions when available, otherwise calculate
   const positions = calculatePositions(nodeMap, props.rootNodeId);
 
   // Build a map of current flow nodes for easy lookup
-  const currentFlowNodesMap = new Map(flowNodes.value.map(n => [n.id, n]));
-  
+  const currentFlowNodesMap = new Map(flowNodes.value.map((n) => [n.id, n]));
+
   const result: VueFlowNode[] = [];
 
   Object.values(nodeMap).forEach((node) => {
     const pos = node.position || positions[node.id] || { x: 0, y: 0 };
-    
+
     // Check if this node already exists in flowNodes
     const existingNode = currentFlowNodesMap.get(node.id);
-    
+
     if (existingNode) {
       // Update existing node in-place to preserve VueFlow's internal references
       existingNode.position = pos;
@@ -292,16 +304,14 @@ function syncFlowNodes() {
 // state and position mutations propagate reactively without a re-sync —
 // only membership changes (key set) or a wholesale replacement of the nodes
 // object (river switch/reload) require rebuilding the flow nodes array.
-watch(
-  () => [props.nodes, Object.keys(props.nodes).join('\n')] as const,
-  syncFlowNodes,
-  { immediate: true }
-);
+watch(() => [props.nodes, Object.keys(props.nodes).join('\n')] as const, syncFlowNodes, {
+  immediate: true,
+});
 
 // Convert edges
 const flowEdges = computed<VueFlowEdge[]>(() => {
   const result: VueFlowEdge[] = [];
-  
+
   Object.values(props.nodes).forEach((node) => {
     if (node.parentId && props.nodes[node.parentId]) {
       result.push({
@@ -327,23 +337,23 @@ function calculatePositions(
   _rootId: string | null
 ): Record<string, { x: number; y: number }> {
   const positions: Record<string, { x: number; y: number }> = {};
-  
+
   const ROOT_SPACING = 500; // Space between different root trees
 
   // Find all root nodes (nodes without parents)
   const rootNodes = Object.values(nodes).filter((n) => !n.parentId);
-  
+
   if (rootNodes.length === 0) return positions;
 
   // Layout each root tree
   let currentRootX = 0;
-  
+
   rootNodes.forEach((rootNode) => {
     const treePositions = layoutTree(rootNode.id, nodes, currentRootX);
     Object.assign(positions, treePositions);
-    
+
     // Find the max X position used by this tree
-    const maxX = Math.max(...Object.values(treePositions).map(p => p.x));
+    const maxX = Math.max(...Object.values(treePositions).map((p) => p.x));
     currentRootX = maxX + ROOT_SPACING;
   });
 
@@ -359,22 +369,18 @@ function layoutTree(
   const HORIZONTAL_SPACING = 350;
   const VERTICAL_SPACING = 200;
 
-  function layoutNode(
-    nodeId: string,
-    depth: number,
-    horizontalIndex: number
-  ): number {
+  function layoutNode(nodeId: string, depth: number, horizontalIndex: number): number {
     const node = nodes[nodeId];
     if (!node) return horizontalIndex;
 
     positions[nodeId] = {
-      x: startX + (horizontalIndex * HORIZONTAL_SPACING),
+      x: startX + horizontalIndex * HORIZONTAL_SPACING,
       y: depth * VERTICAL_SPACING,
     };
 
     // Find children
     const children = Object.values(nodes).filter((n) => n.parentId === nodeId);
-    
+
     let currentIndex = horizontalIndex;
     children.forEach((child, index) => {
       if (index > 0) currentIndex++;
@@ -400,7 +406,7 @@ function startSelectionBox(event: MouseEvent) {
   if (!rect) return;
 
   isRightDragging.value = false;
-  
+
   selectionBox.value = {
     active: true,
     startX: event.clientX - rect.left,
@@ -410,7 +416,7 @@ function startSelectionBox(event: MouseEvent) {
     width: 0,
     height: 0,
   };
-  
+
   // Add event listeners
   document.addEventListener('mousemove', updateSelectionBox);
   document.addEventListener('mouseup', endSelectionBox);
@@ -418,29 +424,29 @@ function startSelectionBox(event: MouseEvent) {
 
 function updateSelectionBox(event: MouseEvent) {
   if (!selectionBox.value.active) return;
-  
+
   const rect = canvasContainer.value?.getBoundingClientRect();
   if (!rect) return;
-  
+
   const currentX = event.clientX - rect.left;
   const currentY = event.clientY - rect.top;
-  
+
   const minX = Math.min(selectionBox.value.startX, currentX);
   const minY = Math.min(selectionBox.value.startY, currentY);
   const maxX = Math.max(selectionBox.value.startX, currentX);
   const maxY = Math.max(selectionBox.value.startY, currentY);
-  
+
   selectionBox.value.x = minX;
   selectionBox.value.y = minY;
   selectionBox.value.width = maxX - minX;
   selectionBox.value.height = maxY - minY;
-  
+
   // If we've dragged more than 5 pixels, consider it a drag
   const dragDistance = Math.sqrt(
-    Math.pow(currentX - selectionBox.value.startX, 2) + 
-    Math.pow(currentY - selectionBox.value.startY, 2)
+    Math.pow(currentX - selectionBox.value.startX, 2) +
+      Math.pow(currentY - selectionBox.value.startY, 2)
   );
-  
+
   if (dragDistance > 5) {
     isRightDragging.value = true;
   }
@@ -462,10 +468,10 @@ function endSelectionBox(_event: MouseEvent) {
 
 function selectNodesInBox() {
   if (!selectionBox.value.active || !vueFlowRef.value) return;
-  
+
   const rect = canvasContainer.value?.getBoundingClientRect();
   if (!rect) return;
-  
+
   // Convert selection box coordinates from screen space to flow space
   const boxMinScreen = {
     x: selectionBox.value.x,
@@ -475,14 +481,14 @@ function selectNodesInBox() {
     x: selectionBox.value.x + selectionBox.value.width,
     y: selectionBox.value.y + selectionBox.value.height,
   };
-  
+
   // Project screen coordinates to flow coordinates
   const boxMin = project(boxMinScreen);
   const boxMax = project(boxMaxScreen);
-  
+
   // Find node IDs within the selection box
   const nodeIdsToSelect: string[] = [];
-  
+
   flowNodes.value.forEach((node) => {
     const nodeLeft = node.position.x;
     const nodeTop = node.position.y;
@@ -496,10 +502,7 @@ function selectNodesInBox() {
 
     // Check if node intersects with selection box
     const intersects =
-      nodeLeft < boxMax.x &&
-      nodeRight > boxMin.x &&
-      nodeTop < boxMax.y &&
-      nodeBottom > boxMin.y;
+      nodeLeft < boxMax.x && nodeRight > boxMin.x && nodeTop < boxMax.y && nodeBottom > boxMin.y;
 
     if (intersects) {
       nodeIdsToSelect.push(node.id);
@@ -531,7 +534,12 @@ function handleNodeDoubleClick(event: NodeMouseEvent | MessageNode) {
   }
 }
 
-function clampMenuPosition(x: number, y: number, menuWidth: number = 220, menuHeight: number = 250): { x: number; y: number } {
+function clampMenuPosition(
+  x: number,
+  y: number,
+  menuWidth: number = 220,
+  menuHeight: number = 250
+): { x: number; y: number } {
   const maxX = window.innerWidth - menuWidth - 8;
   const maxY = window.innerHeight - menuHeight - 8;
   return {
@@ -557,7 +565,7 @@ function showNodeContextMenu(event: NodeMouseEvent | MouseEvent) {
 
   if (node && mouseEvent && 'clientX' in mouseEvent) {
     const selectedNodes = getSelectedNodes.value || [];
-    const selectedNodesData = selectedNodes.map(n => n.data as MessageNode);
+    const selectedNodesData = selectedNodes.map((n) => n.data as MessageNode);
 
     const pos = clampMenuPosition(mouseEvent.clientX, mouseEvent.clientY);
 
@@ -590,9 +598,8 @@ function handlePaneContextMenu(event: MouseEvent) {
 function showPaneContextMenu(mouseEvent: MouseEvent) {
   if (mouseEvent) {
     const selectedNodes = getSelectedNodes.value || [];
-    const selectedNodesData = selectedNodes.length > 1
-      ? selectedNodes.map(n => n.data as MessageNode)
-      : [];
+    const selectedNodesData =
+      selectedNodes.length > 1 ? selectedNodes.map((n) => n.data as MessageNode) : [];
 
     const menuHeight = selectedNodesData.length > 1 ? 100 : 60;
     const pos = clampMenuPosition(mouseEvent.clientX, mouseEvent.clientY, 220, menuHeight);
@@ -647,10 +654,10 @@ async function handleNodeDragStop(event: NodeDragEvent) {
       dragBatchTimeout = null;
       // Collect positions for all selected nodes from VueFlow's current state
       const updates = selectedNodes
-        .filter(node => node.position)
-        .map(node => ({
+        .filter((node) => node.position)
+        .map((node) => ({
           nodeId: node.id,
-          position: { x: node.position!.x, y: node.position!.y }
+          position: { x: node.position!.x, y: node.position!.y },
         }));
 
       // Emit a single batch update event
@@ -707,7 +714,7 @@ function handleDeleteBranch() {
 function handleDeleteMultipleNodes() {
   if (contextMenu.value.selectedNodes.length > 0) {
     // Collect all node IDs and emit as a batch
-    const nodeIds = contextMenu.value.selectedNodes.map(node => node.id);
+    const nodeIds = contextMenu.value.selectedNodes.map((node) => node.id);
     emit('delete-branches-batch', nodeIds);
   }
 }
@@ -733,27 +740,32 @@ function handleKeyboardDelete(event: KeyboardEvent) {
   // ignored: Ctrl/Cmd+Delete is handled by the app-level keyboard
   // shortcuts (useKeyboardShortcuts) for the app-selected node, and
   // handling it here too used to open two confirmation dialogs at once.
-  if ((event.key === 'Delete' || event.key === 'Backspace') &&
-      !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (
+    (event.key === 'Delete' || event.key === 'Backspace') &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    !event.altKey
+  ) {
     // Check if user is typing in an input field
     const target = event.target as HTMLElement;
-    const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-    
+    const isTyping =
+      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
     if (isTyping) {
       // Don't interfere with typing
       return;
     }
-    
+
     // Get currently selected nodes
     const selectedNodes = getSelectedNodes.value || [];
-    
+
     if (selectedNodes.length > 0) {
       // Prevent default browser behavior
       event.preventDefault();
-      
+
       // Extract node IDs from selected nodes
-      const nodeIds = selectedNodes.map(node => node.id);
-      
+      const nodeIds = selectedNodes.map((node) => node.id);
+
       // Emit the batch delete event to trigger the proper deletion flow
       // This will show the confirmation dialog and properly delete nodes with descendants
       emit('delete-branches-batch', nodeIds);
@@ -824,7 +836,7 @@ defineExpose({
   fitView: () => fitView(),
   selectAllNodes: () => {
     const graphNodes = flowNodes.value
-      .map(n => findNode(n.id))
+      .map((n) => findNode(n.id))
       .filter((n): n is GraphNode => !!n);
     addSelectedNodes(graphNodes);
     return graphNodes.length;
@@ -862,7 +874,9 @@ defineExpose({
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
 :deep(.vue-flow__controls-button) {
@@ -901,4 +915,3 @@ defineExpose({
   backdrop-filter: blur(2px);
 }
 </style>
-

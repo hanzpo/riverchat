@@ -27,25 +27,39 @@ describe('client/server model catalog sync', () => {
       expect(client!.name, `name mismatch for ${server.id}`).toBe(server.displayName);
       expect(client!.provider, `provider mismatch for ${server.id}`).toBe(server.provider);
       expect(client!.category, `category (tier) mismatch for ${server.id}`).toBe(server.category);
-      expect(client!.contextLength, `contextLength mismatch for ${server.id}`).toBe(server.contextLength);
+      expect(client!.contextLength, `contextLength mismatch for ${server.id}`).toBe(
+        server.contextLength
+      );
     }
   });
 
   it('has client pricing identical to server (marked-up) pricing', () => {
     for (const server of MODEL_CATALOG) {
       const client = FALLBACK_MODELS.find((m) => m.id === server.id)!;
-      expect(client.pricing.prompt, `prompt price mismatch for ${server.id}`).toBe(server.pricing.prompt);
-      expect(client.pricing.completion, `completion price mismatch for ${server.id}`).toBe(server.pricing.completion);
+      expect(client.pricing.prompt, `prompt price mismatch for ${server.id}`).toBe(
+        server.pricing.prompt
+      );
+      expect(client.pricing.completion, `completion price mismatch for ${server.id}`).toBe(
+        server.pricing.completion
+      );
     }
   });
 
   it('keeps pricing consistent with the backend markup over OpenRouter prices', () => {
     for (const server of MODEL_CATALOG) {
       const client = FALLBACK_MODELS.find((m) => m.id === server.id)!;
-      const expectedPrompt = parseFloat((server.openRouterPricing.prompt * MARKUP_MULTIPLIER).toFixed(4));
-      const expectedCompletion = parseFloat((server.openRouterPricing.completion * MARKUP_MULTIPLIER).toFixed(4));
-      expect(client.pricing.prompt, `markup violated for ${server.id} (prompt)`).toBe(expectedPrompt);
-      expect(client.pricing.completion, `markup violated for ${server.id} (completion)`).toBe(expectedCompletion);
+      const expectedPrompt = parseFloat(
+        (server.openRouterPricing.prompt * MARKUP_MULTIPLIER).toFixed(4)
+      );
+      const expectedCompletion = parseFloat(
+        (server.openRouterPricing.completion * MARKUP_MULTIPLIER).toFixed(4)
+      );
+      expect(client.pricing.prompt, `markup violated for ${server.id} (prompt)`).toBe(
+        expectedPrompt
+      );
+      expect(client.pricing.completion, `markup violated for ${server.id} (completion)`).toBe(
+        expectedCompletion
+      );
     }
   });
 

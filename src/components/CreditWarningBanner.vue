@@ -6,17 +6,13 @@
     :style="bannerStyle"
   >
     <span>{{ message }}</span>
-    <button
-      @click="$emit('upgrade')"
-      class="btn-material shrink-0"
-      :style="buttonStyle"
-    >
+    <button @click="$emit('upgrade')" class="btn-material shrink-0" :style="buttonStyle">
       Upgrade
     </button>
     <button
       @click="dismissed = true"
       class="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
-      style="color: inherit;"
+      style="color: inherit"
       title="Dismiss"
     >
       &times;
@@ -26,29 +22,33 @@
   <!-- Blocking overlay when balance is zero -->
   <div v-if="isZero" class="modal-backdrop z-[150]">
     <div class="modal-content w-[440px] p-8 text-center">
-      <div class="text-3xl font-bold mb-2" style="color: var(--color-error);">
-        Out of credits
-      </div>
-      <p class="text-sm mb-6" style="color: var(--color-text-secondary);">
+      <div class="text-3xl font-bold mb-2" style="color: var(--color-error)">Out of credits</div>
+      <p class="text-sm mb-6" style="color: var(--color-text-secondary)">
         Upgrade your plan to keep chatting.
       </p>
       <div class="flex gap-3 justify-center">
         <button
           @click="$emit('upgrade-to', 'pro')"
           class="btn-material"
-          style="padding: 10px 20px; font-weight: 600; background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);"
+          style="
+            padding: 10px 20px;
+            font-weight: 600;
+            background: var(--color-primary-muted);
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+          "
         >
           Pro &mdash; $20/mo
         </button>
         <button
           @click="$emit('upgrade-to', 'max')"
           class="btn-material"
-          style="padding: 10px 20px; font-weight: 600;"
+          style="padding: 10px 20px; font-weight: 600"
         >
           Max &mdash; $100/mo
         </button>
       </div>
-      <p class="text-xs mt-4" style="color: var(--color-text-tertiary);">
+      <p class="text-xs mt-4" style="color: var(--color-text-tertiary)">
         Credits refresh monthly, or upgrade for more.
       </p>
     </div>

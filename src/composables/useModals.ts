@@ -19,9 +19,17 @@ export function useModals() {
 
   /** True when any of the modals owned by this composable is open. */
   function isAnyOpen(): boolean {
-    return showWelcome.value || showSettings.value || showRiverDashboard.value ||
-           showMessageViewer.value || showHelp.value || showChatModal.value ||
-           showAuth.value || showCreateRiver.value || showOnboarding.value;
+    return (
+      showWelcome.value ||
+      showSettings.value ||
+      showRiverDashboard.value ||
+      showMessageViewer.value ||
+      showHelp.value ||
+      showChatModal.value ||
+      showAuth.value ||
+      showCreateRiver.value ||
+      showOnboarding.value
+    );
   }
 
   return {

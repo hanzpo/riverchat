@@ -10,7 +10,14 @@ import {
   type UserCredential,
   type OAuthCredential,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, Timestamp, type FieldValue } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+  Timestamp,
+  type FieldValue,
+} from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { CacheService } from './cache';
 import { usePostHog } from '../composables/usePostHog';
@@ -104,9 +111,10 @@ export class AuthService {
       const analytics = usePostHog();
       // If the profile was just created or just merged with Google info, the
       // cached copy (and `existingProfile`) is stale — bypass the cache.
-      const profile = (!existingProfile || wasAnonymous)
-        ? await this.getUserProfile(userCredential.user.uid, false)
-        : existingProfile;
+      const profile =
+        !existingProfile || wasAnonymous
+          ? await this.getUserProfile(userCredential.user.uid, false)
+          : existingProfile;
       if (profile) {
         analytics.identify(userCredential.user.uid, profile);
         analytics.capture('user_signed_in', {
@@ -124,7 +132,9 @@ export class AuthService {
         throw new Error('Sign-in cancelled. You closed the popup window.');
       }
       if (error.code === 'auth/popup-blocked') {
-        throw new Error('Pop-up was blocked by your browser. Please enable pop-ups for this site and try again.');
+        throw new Error(
+          'Pop-up was blocked by your browser. Please enable pop-ups for this site and try again.'
+        );
       }
       if (error.code === 'auth/cancelled-popup-request') {
         throw new Error('Sign-in cancelled. Please try again.');
@@ -272,13 +282,17 @@ export class AuthService {
       // After linkWithPopup the top-level user.displayName (and sometimes
       // email) may not be populated yet — fall back to the linked Google
       // provider data so the merged profile gets the Google account info.
-      const googleInfo = user.providerData.find(p => p.providerId === 'google.com');
+      const googleInfo = user.providerData.find((p) => p.providerId === 'google.com');
       const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        email: user.email || googleInfo?.email || '',
-        displayName: user.displayName || googleInfo?.displayName || '',
-        lastLoginAt: serverTimestamp(),
-      }, { merge: true });
+      await setDoc(
+        userRef,
+        {
+          email: user.email || googleInfo?.email || '',
+          displayName: user.displayName || googleInfo?.displayName || '',
+          lastLoginAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
       // Invalidate the cached profile so the merged info is read back fresh
       CacheService.clearUserProfile();
     } catch (error) {

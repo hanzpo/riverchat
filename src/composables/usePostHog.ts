@@ -1,17 +1,17 @@
-import posthog from 'posthog-js'
-import type { UserProfile } from '../services/auth'
+import posthog from 'posthog-js';
+import type { UserProfile } from '../services/auth';
 
-let isInitialized = false
+let isInitialized = false;
 
 // Global error listeners are registered at most once per page load,
 // even if initialization is somehow re-entered.
-let errorListenersRegistered = false
-let onWindowError: ((event: ErrorEvent) => void) | null = null
-let onUnhandledRejection: ((event: PromiseRejectionEvent) => void) | null = null
+let errorListenersRegistered = false;
+let onWindowError: ((event: ErrorEvent) => void) | null = null;
+let onUnhandledRejection: ((event: PromiseRejectionEvent) => void) | null = null;
 
 function registerErrorListeners() {
   if (errorListenersRegistered || typeof window === 'undefined') {
-    return
+    return;
   }
 
   onWindowError = (event) => {
@@ -20,47 +20,47 @@ function registerErrorListeners() {
       filename: event.filename,
       lineno: event.lineno,
       colno: event.colno,
-    })
-  }
+    });
+  };
 
   onUnhandledRejection = (event) => {
     captureException(event.reason, {
       type: 'unhandled_rejection',
-    })
-  }
+    });
+  };
 
-  window.addEventListener('error', onWindowError)
-  window.addEventListener('unhandledrejection', onUnhandledRejection)
-  errorListenersRegistered = true
+  window.addEventListener('error', onWindowError);
+  window.addEventListener('unhandledrejection', onUnhandledRejection);
+  errorListenersRegistered = true;
 }
 
 /** Remove the global error listeners registered by initPostHog (e.g. in tests). */
 export function teardownPostHogErrorTracking() {
   if (!errorListenersRegistered || typeof window === 'undefined') {
-    return
+    return;
   }
   if (onWindowError) {
-    window.removeEventListener('error', onWindowError)
-    onWindowError = null
+    window.removeEventListener('error', onWindowError);
+    onWindowError = null;
   }
   if (onUnhandledRejection) {
-    window.removeEventListener('unhandledrejection', onUnhandledRejection)
-    onUnhandledRejection = null
+    window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    onUnhandledRejection = null;
   }
-  errorListenersRegistered = false
+  errorListenersRegistered = false;
 }
 
 export function initPostHog() {
   if (isInitialized) {
-    return
+    return;
   }
 
-  const apiKey = import.meta.env.VITE_POSTHOG_KEY
-  const apiHost = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com'
+  const apiKey = import.meta.env.VITE_POSTHOG_KEY;
+  const apiHost = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 
   if (!apiKey) {
-    console.warn('PostHog API key not found. Analytics will not be initialized.')
-    return
+    console.warn('PostHog API key not found. Analytics will not be initialized.');
+    return;
   }
 
   posthog.init(apiKey, {
@@ -79,122 +79,125 @@ export function initPostHog() {
     },
     loaded: () => {
       // Setup global error tracking (idempotent)
-      registerErrorListeners()
+      registerErrorListeners();
 
-      console.log('PostHog initialized successfully')
+      console.log('PostHog initialized successfully');
     },
-  })
+  });
 
-  isInitialized = true
+  isInitialized = true;
 }
 
 export function usePostHog() {
   return {
     posthog: isInitialized ? posthog : null,
-    
+
     // User identification
     identify: (userId: string, userProfile?: UserProfile) => {
-      if (!isInitialized) return
-      
-      const properties: Record<string, any> = {}
-      
+      if (!isInitialized) return;
+
+      const properties: Record<string, any> = {};
+
       if (userProfile) {
-        properties.email = userProfile.email
-        properties.subscription_tier = userProfile.subscriptionTier
-        properties.created_at = userProfile.createdAt
+        properties.email = userProfile.email;
+        properties.subscription_tier = userProfile.subscriptionTier;
+        properties.created_at = userProfile.createdAt;
       }
-      
-      posthog.identify(userId, properties)
-      console.log('[PostHog] User identified:', userId)
+
+      posthog.identify(userId, properties);
+      console.log('[PostHog] User identified:', userId);
     },
 
     // Reset user on logout
     reset: () => {
-      if (!isInitialized) return
-      posthog.reset()
-      console.log('[PostHog] User session reset')
+      if (!isInitialized) return;
+      posthog.reset();
+      console.log('[PostHog] User session reset');
     },
 
     // Capture custom events
     capture: (eventName: string, properties?: Record<string, any>) => {
-      if (!isInitialized) return
-      posthog.capture(eventName, properties)
+      if (!isInitialized) return;
+      posthog.capture(eventName, properties);
     },
 
     // Set user properties
     setUserProperties: (properties: Record<string, any>) => {
-      if (!isInitialized) return
-      posthog.setPersonProperties(properties)
+      if (!isInitialized) return;
+      posthog.setPersonProperties(properties);
     },
 
     // Set user properties once (only if not already set)
     setUserPropertiesOnce: (properties: Record<string, any>) => {
-      if (!isInitialized) return
+      if (!isInitialized) return;
       // Use $set_once in the identify call
-      posthog.setPersonProperties(properties)
+      posthog.setPersonProperties(properties);
     },
 
     // Group analytics
     group: (groupType: string, groupKey: string, groupProperties?: Record<string, any>) => {
-      if (!isInitialized) return
-      posthog.group(groupType, groupKey, groupProperties)
+      if (!isInitialized) return;
+      posthog.group(groupType, groupKey, groupProperties);
     },
 
     // Feature flags
     isFeatureEnabled: (flagKey: string): boolean => {
-      if (!isInitialized) return false
-      return posthog.isFeatureEnabled(flagKey) || false
+      if (!isInitialized) return false;
+      return posthog.isFeatureEnabled(flagKey) || false;
     },
 
     getFeatureFlag: (flagKey: string): string | boolean | undefined => {
-      if (!isInitialized) return undefined
-      return posthog.getFeatureFlag(flagKey)
+      if (!isInitialized) return undefined;
+      return posthog.getFeatureFlag(flagKey);
     },
 
     getFeatureFlagPayload: (flagKey: string): any => {
-      if (!isInitialized) return undefined
-      return posthog.getFeatureFlagPayload(flagKey)
+      if (!isInitialized) return undefined;
+      return posthog.getFeatureFlagPayload(flagKey);
     },
 
     onFeatureFlags: (callback: (flags: string[]) => void) => {
-      if (!isInitialized) return
-      posthog.onFeatureFlags(callback)
+      if (!isInitialized) return;
+      posthog.onFeatureFlags(callback);
     },
 
     reloadFeatureFlags: () => {
-      if (!isInitialized) return
-      posthog.reloadFeatureFlags()
+      if (!isInitialized) return;
+      posthog.reloadFeatureFlags();
     },
 
     // Session replay
     startSessionRecording: () => {
-      if (!isInitialized) return
-      posthog.startSessionRecording()
+      if (!isInitialized) return;
+      posthog.startSessionRecording();
     },
 
     stopSessionRecording: () => {
-      if (!isInitialized) return
-      posthog.stopSessionRecording()
+      if (!isInitialized) return;
+      posthog.stopSessionRecording();
     },
 
-    getSessionReplayUrl: (options?: { withTimestamp?: boolean; timestampLookBack?: number }): string | null => {
-      if (!isInitialized) return null
-      return posthog.get_session_replay_url(options)
+    getSessionReplayUrl: (options?: {
+      withTimestamp?: boolean;
+      timestampLookBack?: number;
+    }): string | null => {
+      if (!isInitialized) return null;
+      return posthog.get_session_replay_url(options);
     },
-  }
+  };
 }
 
 // Error tracking helper
 export function captureException(error: Error | any, context?: Record<string, any>) {
-  if (!isInitialized) return
-  
+  if (!isInitialized) return;
+
   const errorProperties: Record<string, any> = {
     $exception_message: error?.message || String(error),
     $exception_type: error?.name || 'Error',
     $exception_stack: error?.stack || '',
     ...context,
-  }
+  };
 
-  posthog.capture('$exception', errorProperties)
-  console.error('[PostHog] Exception captured:', error)
+  posthog.capture('$exception', errorProperties);
+  console.error('[PostHog] Exception captured:', error);
 }

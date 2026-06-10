@@ -14,7 +14,7 @@ function debounce<T extends (...args: any[]) => any>(
 ): ((...args: Parameters<T>) => void) & { cancel: () => void } {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  const executedFunction = function(...args: Parameters<T>) {
+  const executedFunction = function (...args: Parameters<T>) {
     const later = () => {
       timeout = null;
       func(...args);
@@ -26,7 +26,7 @@ function debounce<T extends (...args: any[]) => any>(
     timeout = setTimeout(later, wait);
   };
 
-  executedFunction.cancel = function() {
+  executedFunction.cancel = function () {
     if (timeout) {
       clearTimeout(timeout);
       timeout = null;
@@ -38,7 +38,11 @@ function debounce<T extends (...args: any[]) => any>(
 
 // Global state
 const currentRiver = ref<River | null>(null);
-const settings = ref<Settings>({ lastUsedModelId: null, selectedModelIds: [], lastModelRefresh: undefined });
+const settings = ref<Settings>({
+  lastUsedModelId: null,
+  selectedModelIds: [],
+  lastModelRefresh: undefined,
+});
 const selectedNodeId = ref<string | null>(null);
 const allRivers = ref<River[]>([]);
 const isLoading = ref(false);
@@ -74,23 +78,31 @@ export function useRiverChat() {
   // would replace the deep watch with explicit save triggers (or a version
   // counter bumped by mutation helpers), but that changes the save model and
   // is intentionally not done here.
-  watch(currentRiver, (river) => {
-    if (river && !isInitializing.value) {
-      debouncedSaveRiver(river);
-    }
-  }, { deep: true, flush: 'post' });
+  watch(
+    currentRiver,
+    (river) => {
+      if (river && !isInitializing.value) {
+        debouncedSaveRiver(river);
+      }
+    },
+    { deep: true, flush: 'post' }
+  );
 
   // Save settings whenever they change (but skip during initialization to preserve cloud data).
   // Deep watch kept for correctness (settings are mutated in place in several
   // places); flush: 'post' batches the traversal per render flush.
-  watch(settings, async (newSettings) => {
-    if (isInitializing.value) {
-      console.log('[useRiverChat] Skipping auto-save during initialization');
-      return;
-    }
-    // Use debounced save to reduce writes
-    debouncedSaveSettings(newSettings);
-  }, { deep: true, flush: 'post' });
+  watch(
+    settings,
+    async (newSettings) => {
+      if (isInitializing.value) {
+        console.log('[useRiverChat] Skipping auto-save during initialization');
+        return;
+      }
+      // Use debounced save to reduce writes
+      debouncedSaveSettings(newSettings);
+    },
+    { deep: true, flush: 'post' }
+  );
 
   // Refresh rivers list
   async function refreshRivers(forceRefresh: boolean = false): Promise<void> {
@@ -232,7 +244,7 @@ export function useRiverChat() {
 
     if (!parentId) {
       // This is a new root node - find all existing root nodes
-      const rootNodes = Object.values(currentRiver.value.nodes).filter(n => !n.parentId);
+      const rootNodes = Object.values(currentRiver.value.nodes).filter((n) => !n.parentId);
 
       if (rootNodes.length === 0) {
         // First node ever
@@ -241,8 +253,8 @@ export function useRiverChat() {
 
       // Find the rightmost position among all nodes and calculate spacing
       const allPositions = Object.values(currentRiver.value.nodes)
-        .map(n => n.position)
-        .filter(p => p !== undefined) as { x: number; y: number }[];
+        .map((n) => n.position)
+        .filter((p) => p !== undefined) as { x: number; y: number }[];
 
       if (allPositions.length === 0) {
         // No positions stored yet, use default spacing
@@ -250,9 +262,9 @@ export function useRiverChat() {
       }
 
       // Find the rightmost node and its dimensions
-      const maxX = Math.max(...allPositions.map(p => p.x));
+      const maxX = Math.max(...allPositions.map((p) => p.x));
       const rightmostNode = Object.values(currentRiver.value.nodes).find(
-        n => n.position?.x === maxX
+        (n) => n.position?.x === maxX
       );
 
       if (rightmostNode) {
@@ -277,23 +289,24 @@ export function useRiverChat() {
     const parentDims = estimateNodeDimensions(parent);
 
     // Find siblings (other children of the same parent)
-    const siblings = Object.values(currentRiver.value.nodes)
-      .filter(n => n.parentId === parentId && n.position);
+    const siblings = Object.values(currentRiver.value.nodes).filter(
+      (n) => n.parentId === parentId && n.position
+    );
 
     if (siblings.length === 0) {
       // First child - position directly below parent
       return {
         x: parentPos.x,
-        y: parentPos.y + parentDims.height + BASE_VERTICAL_SPACING
+        y: parentPos.y + parentDims.height + BASE_VERTICAL_SPACING,
       };
     }
 
     // Position to the right of existing siblings
-    const siblingPositions = siblings.map(s => s.position!);
-    const maxSiblingX = Math.max(...siblingPositions.map(p => p.x));
+    const siblingPositions = siblings.map((s) => s.position!);
+    const maxSiblingX = Math.max(...siblingPositions.map((p) => p.x));
 
     // Find the rightmost sibling to calculate proper spacing
-    const rightmostSibling = siblings.find(s => s.position?.x === maxSiblingX);
+    const rightmostSibling = siblings.find((s) => s.position?.x === maxSiblingX);
     let horizontalSpacing = 380; // Default
 
     if (rightmostSibling) {
@@ -303,7 +316,7 @@ export function useRiverChat() {
 
     return {
       x: maxSiblingX + horizontalSpacing,
-      y: parentPos.y + parentDims.height + BASE_VERTICAL_SPACING
+      y: parentPos.y + parentDims.height + BASE_VERTICAL_SPACING,
     };
   }
 
@@ -352,7 +365,11 @@ export function useRiverChat() {
     return node;
   }
 
-  async function generateAIResponse(userNodeId: string, model: LLMModel, webSearchEnabled: boolean = false): Promise<void> {
+  async function generateAIResponse(
+    userNodeId: string,
+    model: LLMModel,
+    webSearchEnabled: boolean = false
+  ): Promise<void> {
     if (!currentRiver.value) {
       throw new Error('No active river');
     }
@@ -557,7 +574,9 @@ export function useRiverChat() {
     }
   }
 
-  function updateNodePositionsBatch(updates: Array<{ nodeId: string; position: { x: number; y: number } }>): void {
+  function updateNodePositionsBatch(
+    updates: Array<{ nodeId: string; position: { x: number; y: number } }>
+  ): void {
     if (!currentRiver.value) return;
     // Update all positions in a single operation to minimize reactivity triggers
     updates.forEach(({ nodeId, position }) => {
@@ -587,13 +606,14 @@ export function useRiverChat() {
   function getChildren(nodeId: string): MessageNode[] {
     if (!currentRiver.value) return [];
 
-    return Object.values(currentRiver.value.nodes).filter(
-      (node) => node.parentId === nodeId
-    );
+    return Object.values(currentRiver.value.nodes).filter((node) => node.parentId === nodeId);
   }
 
   // Settings Management
-  async function updateSettings(newSettings: Partial<Settings>, immediate: boolean = false): Promise<void> {
+  async function updateSettings(
+    newSettings: Partial<Settings>,
+    immediate: boolean = false
+  ): Promise<void> {
     // Merge new settings into current settings
     const mergedSettings = { ...settings.value, ...newSettings };
     settings.value = mergedSettings;
@@ -652,21 +672,22 @@ export function useRiverChat() {
         console.log('[useRiverChat] Settings loaded successfully');
 
         // Load subscription balance and models from server
-        await Promise.all([
-          subscription.refreshBalance(),
-          subscription.refreshModels(),
-        ]);
+        await Promise.all([subscription.refreshBalance(), subscription.refreshModels()]);
 
         // Validate and set default selected models
         if (subscription.availableModels.value.length > 0) {
-          const availableIds = new Set(subscription.availableModels.value.map(m => m.id));
+          const availableIds = new Set(subscription.availableModels.value.map((m) => m.id));
           const currentIds = settings.value.selectedModelIds || [];
-          const validIds = currentIds.filter(id => availableIds.has(id));
+          const validIds = currentIds.filter((id) => availableIds.has(id));
 
           if (validIds.length === 0) {
             // No valid models selected — set default
-            const defaultModel = subscription.availableModels.value.find(m => m.id === DEFAULT_MODEL_ID);
-            settings.value.selectedModelIds = [defaultModel?.id ?? subscription.availableModels.value[0]!.id];
+            const defaultModel = subscription.availableModels.value.find(
+              (m) => m.id === DEFAULT_MODEL_ID
+            );
+            settings.value.selectedModelIds = [
+              defaultModel?.id ?? subscription.availableModels.value[0]!.id,
+            ];
             await FirestoreStorageService.saveSettings(settings.value);
           } else if (validIds.length !== currentIds.length) {
             // Some models were stale — keep only valid ones
@@ -682,7 +703,8 @@ export function useRiverChat() {
         // Load the last visited river, or fall back to the most recent river
         if (allRivers.value && allRivers.value.length > 0) {
           const lastVisitedId = settings.value.lastVisitedRiverId;
-          const lastVisitedExists = lastVisitedId && allRivers.value.some(r => r.id === lastVisitedId);
+          const lastVisitedExists =
+            lastVisitedId && allRivers.value.some((r) => r.id === lastVisitedId);
           const riverToLoad = lastVisitedExists ? lastVisitedId! : allRivers.value[0]!.id;
           await loadRiver(riverToLoad);
         }

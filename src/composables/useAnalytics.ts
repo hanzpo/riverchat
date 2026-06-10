@@ -68,7 +68,7 @@ export const AnalyticsEvents = {
   FIRST_MESSAGE_SENT: 'first_message_sent',
 } as const;
 
-export type AnalyticsEventName = typeof AnalyticsEvents[keyof typeof AnalyticsEvents];
+export type AnalyticsEventName = (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
 
 // Helper to safely log events
 function safeLogEvent(eventName: string, params?: Record<string, any>) {

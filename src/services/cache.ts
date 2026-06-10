@@ -17,9 +17,9 @@ const CACHE_KEYS = {
 // Cache expiration times (in milliseconds)
 const CACHE_TTL = {
   AUTH_STATE: 7 * 24 * 60 * 60 * 1000, // 7 days
-  USER_PROFILE: 24 * 60 * 60 * 1000,    // 24 hours
-  SETTINGS: 5 * 60 * 1000,               // 5 minutes (frequent updates)
-  RIVERS_METADATA: 10 * 60 * 1000,       // 10 minutes
+  USER_PROFILE: 24 * 60 * 60 * 1000, // 24 hours
+  SETTINGS: 5 * 60 * 1000, // 5 minutes (frequent updates)
+  RIVERS_METADATA: 10 * 60 * 1000, // 10 minutes
 } as const;
 
 interface CacheEntry<T> {
@@ -44,7 +44,7 @@ export class CacheService {
       if (!cached) return null;
 
       const entry: CacheEntry<T> = JSON.parse(cached);
-      
+
       // Check if expired
       if (Date.now() > entry.expiresAt) {
         localStorage.removeItem(key);
@@ -147,7 +147,7 @@ export class CacheService {
    */
   static cacheRiversMetadata(rivers: River[]): void {
     // Store only metadata (id, name, dates) not full nodes
-    const metadata: RiverMetadata[] = rivers.map(r => ({
+    const metadata: RiverMetadata[] = rivers.map((r) => ({
       id: r.id,
       name: r.name,
       createdAt: r.createdAt,
@@ -176,9 +176,8 @@ export class CacheService {
    * Clear all caches
    */
   static clearAll(): void {
-    Object.values(CACHE_KEYS).forEach(key => {
+    Object.values(CACHE_KEYS).forEach((key) => {
       localStorage.removeItem(key);
     });
   }
 }
-

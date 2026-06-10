@@ -52,8 +52,8 @@ export class FirestoreStorageService {
         rivers.push(doc.data() as River);
       });
 
-      const sortedRivers = rivers.sort((a, b) =>
-        new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+      const sortedRivers = rivers.sort(
+        (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
       );
 
       CacheService.cacheRiversMetadata(sortedRivers);
@@ -153,7 +153,10 @@ export class FirestoreStorageService {
         // Migrate from old format if needed
         const settings: Settings = {
           lastUsedModelId: data.lastUsedModelId || data.lastUsedModel?.id || null,
-          selectedModelIds: data.selectedModelIds || (data.lastChatSelectedModels?.map((m: { id: string }) => m.id)) || [],
+          selectedModelIds:
+            data.selectedModelIds ||
+            data.lastChatSelectedModels?.map((m: { id: string }) => m.id) ||
+            [],
           lastModelRefresh: data.lastModelRefresh,
           lastVisitedRiverId: data.lastVisitedRiverId || null,
           dismissedTips: data.dismissedTips || [],
@@ -245,7 +248,10 @@ export class FirestoreStorageService {
       return JSON.parse(data) as RiverChatData;
     } catch (error) {
       // Graceful fallback, but surface the cause (quota, corrupted JSON, ...)
-      console.warn('[FirestoreStorage] Failed to read local data; falling back to empty state:', error);
+      console.warn(
+        '[FirestoreStorage] Failed to read local data; falling back to empty state:',
+        error
+      );
       return { rivers: [], settings: DEFAULT_SETTINGS, activeRiverId: null };
     }
   }
@@ -292,7 +298,10 @@ export class FirestoreStorageService {
     // Migrate from old format if needed
     return {
       lastUsedModelId: raw.lastUsedModelId || (raw as any).lastUsedModel?.id || null,
-      selectedModelIds: raw.selectedModelIds || ((raw as any).lastChatSelectedModels?.map((m: { id: string }) => m.id)) || [],
+      selectedModelIds:
+        raw.selectedModelIds ||
+        (raw as any).lastChatSelectedModels?.map((m: { id: string }) => m.id) ||
+        [],
       lastModelRefresh: raw.lastModelRefresh,
       lastVisitedRiverId: raw.lastVisitedRiverId || null,
       dismissedTips: raw.dismissedTips || [],

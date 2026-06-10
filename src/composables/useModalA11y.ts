@@ -13,25 +13,26 @@ import { watch, nextTick, type Ref } from 'vue';
  * useKeyboardShortcuts, which closes open overlays one at a time in
  * priority order, so it is intentionally not duplicated here.
  */
-export function useModalA11y(
-  isOpen: () => boolean,
-  modalEl: Ref<HTMLElement | null>,
-) {
+export function useModalA11y(isOpen: () => boolean, modalEl: Ref<HTMLElement | null>) {
   let previouslyFocused: HTMLElement | null = null;
 
-  watch(isOpen, async (open, wasOpen) => {
-    if (open && !wasOpen) {
-      const active = document.activeElement;
-      previouslyFocused = active instanceof HTMLElement ? active : null;
-      await nextTick();
-      if (modalEl.value && !modalEl.value.contains(document.activeElement)) {
-        modalEl.value.focus();
+  watch(
+    isOpen,
+    async (open, wasOpen) => {
+      if (open && !wasOpen) {
+        const active = document.activeElement;
+        previouslyFocused = active instanceof HTMLElement ? active : null;
+        await nextTick();
+        if (modalEl.value && !modalEl.value.contains(document.activeElement)) {
+          modalEl.value.focus();
+        }
+      } else if (!open && wasOpen) {
+        if (previouslyFocused && document.contains(previouslyFocused)) {
+          previouslyFocused.focus();
+        }
+        previouslyFocused = null;
       }
-    } else if (!open && wasOpen) {
-      if (previouslyFocused && document.contains(previouslyFocused)) {
-        previouslyFocused.focus();
-      }
-      previouslyFocused = null;
-    }
-  }, { immediate: true, flush: 'post' });
+    },
+    { immediate: true, flush: 'post' }
+  );
 }

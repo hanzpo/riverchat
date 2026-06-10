@@ -59,9 +59,8 @@ export function useKeyboardShortcuts(opts: KeyboardShortcutsOptions) {
     keyboardHandler = (e: KeyboardEvent) => {
       // Check if user is typing in an input/textarea/contenteditable
       const target = e.target as HTMLElement;
-      const isTyping = target?.tagName === 'INPUT' ||
-                       target?.tagName === 'TEXTAREA' ||
-                       target?.isContentEditable;
+      const isTyping =
+        target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable;
 
       // Escape: Close modals one at a time (always available)
       if (e.key === 'Escape') {
@@ -234,7 +233,12 @@ export function useKeyboardShortcuts(opts: KeyboardShortcutsOptions) {
         }
 
         // Ctrl/Cmd + Shift + V: View full message (avoid hijacking native paste)
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'V' || e.key === 'v') && !isTyping) {
+        if (
+          (e.ctrlKey || e.metaKey) &&
+          e.shiftKey &&
+          (e.key === 'V' || e.key === 'v') &&
+          !isTyping
+        ) {
           e.preventDefault();
           if (currentNode) {
             opts.viewMessage(currentNode);

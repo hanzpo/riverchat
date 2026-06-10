@@ -8,10 +8,17 @@
       aria-labelledby="create-river-modal-title"
       class="modal-content w-[450px] p-7"
     >
-      <h3 id="create-river-modal-title" class="text-lg font-semibold mb-3" style="color: var(--color-text-primary); letter-spacing: -0.01em;">
+      <h3
+        id="create-river-modal-title"
+        class="text-lg font-semibold mb-3"
+        style="color: var(--color-text-primary); letter-spacing: -0.01em"
+      >
         Create a New River
       </h3>
-      <p class="text-sm leading-relaxed mb-4 font-medium" style="color: var(--color-text-secondary);">
+      <p
+        class="text-sm leading-relaxed mb-4 font-medium"
+        style="color: var(--color-text-secondary)"
+      >
         Give your river a name to get started.
       </p>
 
@@ -25,14 +32,20 @@
       />
 
       <div class="flex justify-end gap-3">
-        <button @click="emit('close')" class="btn-material" style="padding: 8px 16px;">
+        <button @click="emit('close')" class="btn-material" style="padding: 8px 16px">
           Cancel
         </button>
         <button
           @click="handleCreate"
           :disabled="!riverName.trim()"
           class="btn-material"
-          style="padding: 8px 16px; font-weight: 600; background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);"
+          style="
+            padding: 8px 16px;
+            font-weight: 600;
+            background: var(--color-primary-muted);
+            color: var(--color-primary);
+            border-color: var(--color-primary);
+          "
         >
           Create
         </button>
@@ -63,14 +76,17 @@ const modalEl = ref<HTMLElement | null>(null);
 useModalA11y(() => props.isOpen, modalEl);
 
 // Auto-focus and reset when modal opens
-watch(() => props.isOpen, (open) => {
-  if (open) {
-    riverName.value = '';
-    nextTick(() => {
-      nameInput.value?.focus();
-    });
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) {
+      riverName.value = '';
+      nextTick(() => {
+        nameInput.value?.focus();
+      });
+    }
   }
-});
+);
 
 function handleCreate() {
   const trimmed = riverName.value.trim();

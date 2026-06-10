@@ -1,7 +1,13 @@
 import { ref, computed } from 'vue';
 import type { SubscriptionTier, LLMModel, ModelCategory, UsageMetadata } from '../types';
 import { CATEGORY_MIN_TIER } from '../types';
-import { callGetBalance, callGetModels, callCreateCheckout, callCreateTopupCheckout, callCreatePortalSession } from '../services/cloud-functions';
+import {
+  callGetBalance,
+  callGetModels,
+  callCreateCheckout,
+  callCreateTopupCheckout,
+  callCreatePortalSession,
+} from '../services/cloud-functions';
 import { FALLBACK_MODELS } from '../config/models';
 
 // Global subscription state
@@ -53,8 +59,12 @@ export function useSubscription() {
   const webSearchEnabled = computed(() => tier.value !== 'free');
 
   // Credit warning thresholds (for free tier only — paid tiers have enough credits)
-  const isLowBalance = computed(() => tier.value === 'free' && totalBalance.value > 0 && totalBalance.value < 50);
-  const isCriticalBalance = computed(() => tier.value === 'free' && totalBalance.value > 0 && totalBalance.value < 10);
+  const isLowBalance = computed(
+    () => tier.value === 'free' && totalBalance.value > 0 && totalBalance.value < 50
+  );
+  const isCriticalBalance = computed(
+    () => tier.value === 'free' && totalBalance.value > 0 && totalBalance.value < 10
+  );
   const isZeroBalance = computed(() => totalBalance.value <= 0);
 
   /** Refresh balance from server */
@@ -80,7 +90,10 @@ export function useSubscription() {
       const models = await callGetModels();
       availableModels.value = models.length > 0 ? models : FALLBACK_MODELS;
     } catch (error) {
-      console.error('[Subscription] Failed to load models from server, using fallback catalog:', error);
+      console.error(
+        '[Subscription] Failed to load models from server, using fallback catalog:',
+        error
+      );
       availableModels.value = FALLBACK_MODELS;
     } finally {
       isLoadingModels.value = false;

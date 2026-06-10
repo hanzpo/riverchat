@@ -1,32 +1,39 @@
 import { describe, it, expect } from 'vitest';
-import { filterModelsByTier, getAccessibleModels, sortModels, groupModelsByCategory } from './openrouter';
+import {
+  filterModelsByTier,
+  getAccessibleModels,
+  sortModels,
+  groupModelsByCategory,
+} from './openrouter';
 import { FALLBACK_MODELS } from '../config/models';
 
 describe('filterModelsByTier', () => {
   it('free tier can only access budget models', () => {
     const filtered = filterModelsByTier(FALLBACK_MODELS, 'free');
-    const accessible = filtered.filter(m => m.accessible);
-    const inaccessible = filtered.filter(m => !m.accessible);
+    const accessible = filtered.filter((m) => m.accessible);
+    const inaccessible = filtered.filter((m) => !m.accessible);
 
-    expect(accessible.every(m => m.category === 'budget')).toBe(true);
-    expect(inaccessible.every(m => m.category !== 'budget')).toBe(true);
+    expect(accessible.every((m) => m.category === 'budget')).toBe(true);
+    expect(inaccessible.every((m) => m.category !== 'budget')).toBe(true);
     expect(accessible.length).toBe(4); // 4 budget models
   });
 
   it('pro tier can access budget, standard, and premium models', () => {
     const filtered = filterModelsByTier(FALLBACK_MODELS, 'pro');
-    const accessible = filtered.filter(m => m.accessible);
-    const inaccessible = filtered.filter(m => !m.accessible);
+    const accessible = filtered.filter((m) => m.accessible);
+    const inaccessible = filtered.filter((m) => !m.accessible);
 
-    expect(accessible.every(m => ['budget', 'standard', 'premium'].includes(m.category))).toBe(true);
-    expect(inaccessible.every(m => m.category === 'frontier')).toBe(true);
+    expect(accessible.every((m) => ['budget', 'standard', 'premium'].includes(m.category))).toBe(
+      true
+    );
+    expect(inaccessible.every((m) => m.category === 'frontier')).toBe(true);
     expect(accessible.length).toBe(16); // 4 + 6 + 6
     expect(inaccessible.length).toBe(3); // 3 frontier
   });
 
   it('max tier can access all models', () => {
     const filtered = filterModelsByTier(FALLBACK_MODELS, 'max');
-    const accessible = filtered.filter(m => m.accessible);
+    const accessible = filtered.filter((m) => m.accessible);
 
     expect(accessible.length).toBe(FALLBACK_MODELS.length);
   });
@@ -36,7 +43,7 @@ describe('getAccessibleModels', () => {
   it('free tier returns only budget models', () => {
     const models = getAccessibleModels(FALLBACK_MODELS, 'free');
     expect(models.length).toBe(4);
-    expect(models.every(m => m.category === 'budget')).toBe(true);
+    expect(models.every((m) => m.category === 'budget')).toBe(true);
   });
 
   it('max tier returns all models', () => {
@@ -48,7 +55,7 @@ describe('getAccessibleModels', () => {
 describe('sortModels', () => {
   it('sorts by category order: budget < standard < premium < frontier', () => {
     const sorted = sortModels([...FALLBACK_MODELS]);
-    const categories = sorted.map(m => m.category);
+    const categories = sorted.map((m) => m.category);
 
     let lastCategoryIndex = -1;
     const categoryOrder = { budget: 0, standard: 1, premium: 2, frontier: 3 };
@@ -61,7 +68,7 @@ describe('sortModels', () => {
 
   it('priority models appear first within their category', () => {
     const sorted = sortModels([...FALLBACK_MODELS]);
-    const budgetModels = sorted.filter(m => m.category === 'budget');
+    const budgetModels = sorted.filter((m) => m.category === 'budget');
 
     // deepseek/deepseek-v3.2 is first priority budget model
     expect(budgetModels[0]!.id).toBe('deepseek/deepseek-v3.2');

@@ -20,16 +20,7 @@
       "
       title="Back"
     >
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <path d="M19 12H5M12 19l-7-7 7-7" />
-      </svg>
+      <PhArrowLeft :size="14" />
       Back
     </button>
 
@@ -120,8 +111,8 @@
                         : 'bg-secondary/30 border-secondary/50 text-secondary'
                     "
                   >
-                    <User v-if="message.type === 'user'" :size="13" />
-                    <Bot v-else :size="13" />
+                    <PhUser v-if="message.type === 'user'" :size="13" />
+                    <PhRobot v-else :size="13" />
                     <span>{{ message.type === 'user' ? 'YOU' : 'AI' }}</span>
                   </span>
                   <span
@@ -129,7 +120,7 @@
                     class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-accent/30 border border-accent/50 text-accent flex items-center gap-1"
                     :title="`${getBranchCount(message.id, props.allNodes)} branch${getBranchCount(message.id, props.allNodes) > 1 ? 'es' : ''} from highlighted text`"
                   >
-                    <GitBranch :size="11" />
+                    <PhGitBranch :size="11" />
                     <span>{{ getBranchCount(message.id, props.allNodes) }}</span>
                   </span>
                 </div>
@@ -187,7 +178,7 @@
                   v-if="message.state === 'error'"
                   class="error-badge-wrapper relative text-error font-bold flex items-center gap-1"
                 >
-                  <AlertTriangle :size="12" />
+                  <PhWarning :size="12" />
                   <span>Error</span>
                   <span v-if="message.error" class="error-tooltip">{{ message.error }}</span>
                 </span>
@@ -260,7 +251,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, watchEffect, nextTick } from 'vue';
 import type { MessageNode, Settings, LLMModel } from '../types';
-import { User, Bot, GitBranch, AlertTriangle } from 'lucide-vue-next';
+import { PhUser, PhRobot, PhGitBranch, PhWarning, PhArrowLeft } from '@phosphor-icons/vue';
 import { renderMarkdown, formatTime, getBranchCount } from '../utils/chat';
 import TextHighlightPopover from './TextHighlightPopover.vue';
 import ChatInputArea from './ChatInputArea.vue';

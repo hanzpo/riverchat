@@ -83,48 +83,18 @@
             class="flex items-center gap-2 text-xs"
             style="color: var(--color-text-secondary)"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              style="color: var(--color-success); flex-shrink: 0"
-            >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
+            <PhCheck :size="14" style="color: var(--color-success); flex-shrink: 0" />
             <span
               >Save {{ props.riverCount }} conversation{{ props.riverCount > 1 ? 's' : ''
               }}{{ props.messageCount > 0 ? ` (${props.messageCount} messages)` : '' }}</span
             >
           </div>
           <div class="flex items-center gap-2 text-xs" style="color: var(--color-text-secondary)">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              style="color: var(--color-success); flex-shrink: 0"
-            >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
+            <PhCheck :size="14" style="color: var(--color-success); flex-shrink: 0" />
             <span>Sync across all your devices</span>
           </div>
           <div class="flex items-center gap-2 text-xs" style="color: var(--color-text-secondary)">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              style="color: var(--color-success); flex-shrink: 0"
-            >
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
+            <PhCheck :size="14" style="color: var(--color-success); flex-shrink: 0" />
             <span>Unlock credit top-ups</span>
           </div>
         </div>
@@ -193,6 +163,7 @@ import { AuthService } from '../services/auth';
 import { FirestoreStorageService } from '../services/firestore-storage';
 import { auth } from '../config/firebase';
 import { useModalA11y } from '../composables/useModalA11y';
+import { PhCheck } from '@phosphor-icons/vue';
 
 interface Props {
   isOpen: boolean;

@@ -46,19 +46,7 @@
         "
         title="Pop out chat"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"
-          />
-          <path
-            d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"
-          />
-        </svg>
+        <PhArrowSquareOut :size="16" />
       </button>
       <button
         @click="$emit('close')"
@@ -71,18 +59,7 @@
         "
         title="Close chat"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-4 w-4"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path
-            fill-rule="evenodd"
-            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <PhX :size="16" />
       </button>
     </div>
 
@@ -141,8 +118,8 @@
                     : 'bg-secondary/30 border-secondary/50 text-secondary'
                 "
               >
-                <User v-if="message.type === 'user'" :size="12" />
-                <Bot v-else :size="12" />
+                <PhUser v-if="message.type === 'user'" :size="12" />
+                <PhRobot v-else :size="12" />
                 <span>{{ message.type === 'user' ? 'YOU' : 'AI' }}</span>
               </span>
               <span
@@ -150,7 +127,7 @@
                 class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-accent/30 border border-accent/50 text-accent flex items-center gap-1"
                 :title="`${getBranchCount(message.id, props.allNodes)} branch${getBranchCount(message.id, props.allNodes) > 1 ? 'es' : ''} from highlighted text`"
               >
-                <GitBranch :size="11" />
+                <PhGitBranch :size="11" />
                 <span>{{ getBranchCount(message.id, props.allNodes) }}</span>
               </span>
             </div>
@@ -199,7 +176,7 @@
               v-if="message.state === 'error'"
               class="error-badge-wrapper relative text-error font-bold flex items-center gap-1"
             >
-              <AlertTriangle :size="12" />
+              <PhWarning :size="12" />
               <span>Error</span>
               <span v-if="message.error" class="error-tooltip">{{ message.error }}</span>
             </span>
@@ -338,7 +315,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, watchEffect, nextTick } from 'vue';
 import type { MessageNode, Settings, LLMModel } from '../types';
-import { User, Bot, GitBranch, AlertTriangle } from 'lucide-vue-next';
+import {
+  PhUser,
+  PhRobot,
+  PhGitBranch,
+  PhWarning,
+  PhArrowSquareOut,
+  PhX,
+} from '@phosphor-icons/vue';
 import { renderMarkdown, formatTime, getBranchCount } from '../utils/chat';
 import TextHighlightPopover from './TextHighlightPopover.vue';
 import ChatInputArea from './ChatInputArea.vue';

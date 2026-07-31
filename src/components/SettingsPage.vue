@@ -12,16 +12,7 @@
           class="flex items-center gap-2 text-sm font-semibold hover:opacity-80 transition-opacity"
           style="color: var(--color-text-primary)"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
+          <PhArrowLeft :size="16" />
           Back
         </button>
       </div>
@@ -423,31 +414,8 @@
                   : 'background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);'
               "
             >
-              <svg
-                v-if="!isRefreshingModels"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path
-                  d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
-                />
-              </svg>
-              <svg
-                v-if="isRefreshingModels"
-                class="animate-spin"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-              </svg>
+              <PhArrowsClockwise v-if="!isRefreshingModels" :size="16" />
+              <PhCircleNotch v-if="isRefreshingModels" class="animate-spin" :size="16" />
               {{ isRefreshingModels ? 'Refreshing...' : 'Refresh Model List' }}
             </button>
             <p
@@ -517,18 +485,7 @@
                   : 'background: var(--color-error); border-color: var(--color-error);'
               "
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
+              <PhSignOut :size="18" />
               {{ isAuthenticating ? 'Signing out...' : 'Sign Out' }}
             </button>
           </div>
@@ -542,19 +499,7 @@
                 border: 1px solid var(--color-border);
               "
             >
-              <svg
-                class="mx-auto mb-4"
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                style="color: var(--color-text-tertiary)"
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+              <PhUser class="mx-auto mb-4" :size="48" style="color: var(--color-text-tertiary)" />
               <p class="text-sm font-medium mb-2" style="color: var(--color-text-primary)">
                 Not signed in
               </p>
@@ -576,6 +521,13 @@ import type { Settings, LLMModel, ModelCategory } from '../types';
 import { CATEGORY_ORDER, CATEGORY_LABELS, CATEGORY_MIN_TIER } from '../types';
 import { useSubscription } from '../composables/useSubscription';
 import { sortModels } from '../services/openrouter';
+import {
+  PhArrowLeft,
+  PhArrowsClockwise,
+  PhCircleNotch,
+  PhSignOut,
+  PhUser,
+} from '@phosphor-icons/vue';
 
 interface Props {
   settings: Settings;

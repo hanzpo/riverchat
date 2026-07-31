@@ -19,26 +19,14 @@
             : 'Upgrade to use web search'
         "
       >
-        <svg
-          :width="compact ? 14 : 16"
-          :height="compact ? 14 : 16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+        <PhGlobe
+          :size="compact ? 14 : 16"
           :style="
             webSearchEnabled && canEnableWebSearch
               ? 'color: var(--color-primary);'
               : 'color: var(--color-text-tertiary);'
           "
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path
-            d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-          />
-        </svg>
+        />
       </button>
       <div
         v-for="(modelId, index) in selectedModelIds"
@@ -57,16 +45,7 @@
           style="color: var(--color-text-tertiary)"
           title="Remove model"
         >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          >
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <PhX :size="10" weight="bold" />
         </button>
       </div>
       <button
@@ -76,16 +55,7 @@
         style="color: var(--color-text-tertiary); border: 1px dashed var(--color-border)"
         title="Add model"
       >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        <PhPlus :size="10" weight="bold" />
       </button>
     </div>
 
@@ -125,22 +95,7 @@
         "
       >
         <div v-if="isSending" class="loading-spinner-small"></div>
-        <svg
-          v-else
-          :width="compact ? 14 : 16"
-          :height="compact ? 14 : 16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-          <path d="M21 3v5h-5" />
-          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-          <path d="M3 21v-5h5" />
-        </svg>
+        <PhArrowsClockwise v-else :size="compact ? 14 : 16" />
         <span>Resend</span>
       </button>
     </div>
@@ -156,7 +111,7 @@
     >
       <div class="flex items-start justify-between gap-2 mb-2">
         <div class="flex items-center gap-2">
-          <GitBranch :size="compact ? 14 : 16" class="text-accent" />
+          <PhGitBranch :size="compact ? 14 : 16" class="text-accent" />
           <span
             class="font-bold text-accent uppercase tracking-wider"
             :class="compact ? 'text-[11px]' : 'text-xs'"
@@ -169,7 +124,7 @@
           style="color: var(--color-text-tertiary)"
           title="Clear context"
         >
-          <X :size="compact ? 14 : 16" />
+          <PhX :size="compact ? 14 : 16" />
         </button>
       </div>
       <div
@@ -199,26 +154,14 @@
             : 'Upgrade to use web search'
         "
       >
-        <svg
-          :width="compact ? 14 : 16"
-          :height="compact ? 14 : 16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
+        <PhGlobe
+          :size="compact ? 14 : 16"
           :style="
             webSearchEnabled && canEnableWebSearch
               ? 'color: var(--color-primary);'
               : 'color: var(--color-text-tertiary);'
           "
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path
-            d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-          />
-        </svg>
+        />
       </button>
       <div
         v-for="(modelId, index) in selectedModelIds"
@@ -237,16 +180,7 @@
           style="color: var(--color-text-tertiary)"
           title="Remove model"
         >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-          >
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+          <PhX :size="10" weight="bold" />
         </button>
       </div>
       <button
@@ -256,16 +190,7 @@
         style="color: var(--color-text-tertiary); border: 1px dashed var(--color-border)"
         title="Add model"
       >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        <PhPlus :size="10" weight="bold" />
       </button>
     </div>
 
@@ -301,20 +226,7 @@
         "
       >
         <div v-if="isSending" class="loading-spinner-small"></div>
-        <svg
-          v-else
-          :width="compact ? 18 : 20"
-          :height="compact ? 18 : 20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          style="color: white"
-        >
-          <path d="M12 19V5M5 12l7-7 7 7" />
-        </svg>
+        <PhArrowUp v-else :size="compact ? 18 : 20" style="color: white" />
       </button>
     </div>
   </div>
@@ -323,7 +235,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { MessageNode, LLMModel } from '../types';
-import { GitBranch, X } from 'lucide-vue-next';
+import {
+  PhGitBranch,
+  PhX,
+  PhGlobe,
+  PhPlus,
+  PhArrowsClockwise,
+  PhArrowUp,
+} from '@phosphor-icons/vue';
 import ModelDropdown from './ModelDropdown.vue';
 
 interface Props {

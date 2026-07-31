@@ -54,7 +54,7 @@
           @click="handleCreateRootNode"
           class="fixed top-4 right-4 z-50 btn-material px-5 py-2.5 text-sm font-bold flex items-center gap-2 shadow-elevation-3"
         >
-          <Plus :size="16" />
+          <PhPlus :size="16" />
           <span>New Root Node</span>
         </button>
 
@@ -287,7 +287,7 @@ import { useOnboardingFlow } from './composables/useOnboardingFlow';
 import { useCheckoutRedirect } from './composables/useCheckoutRedirect';
 import { copyToClipboard } from './composables/useClipboard';
 import type { MessageNode, Settings } from './types';
-import { Plus } from 'lucide-vue-next';
+import { PhPlus } from '@phosphor-icons/vue';
 
 // Critical components loaded immediately
 import AppHeader from './components/AppHeader.vue';

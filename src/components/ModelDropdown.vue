@@ -6,20 +6,12 @@
       style="color: var(--color-text-primary); border: 1px solid var(--color-border)"
     >
       <span class="truncate max-w-[160px]">{{ selectedModelName }}</span>
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+      <PhCaretDown
+        :size="10"
+        weight="bold"
         class="flex-shrink-0 transition-transform"
         :class="{ 'rotate-180': isOpen }"
-      >
-        <path d="M6 9l6 6 6-6" />
-      </svg>
+      />
     </button>
 
     <Teleport to="body">
@@ -80,19 +72,13 @@
                   {{ model.provider }}
                 </div>
               </div>
-              <svg
+              <PhCheck
                 v-if="model.id === selectedModelId"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
+                :size="14"
+                weight="bold"
                 class="flex-shrink-0"
                 style="color: var(--color-primary)"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
+              />
             </button>
           </div>
         </template>
@@ -120,6 +106,7 @@ import { useSubscription } from '../composables/useSubscription';
 import { usePostHog } from '../composables/usePostHog';
 import { sortModels } from '../services/openrouter';
 import UpgradePopover from './UpgradePopover.vue';
+import { PhCaretDown, PhCheck } from '@phosphor-icons/vue';
 
 interface Props {
   selectedModelId: string | null;

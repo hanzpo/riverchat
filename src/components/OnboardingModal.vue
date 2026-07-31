@@ -79,19 +79,7 @@
                 : 'width: 40px; height: 40px; background: var(--color-primary); cursor: pointer;'
             "
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="color: white"
-            >
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
+            <PhArrowUp :size="18" style="color: white" />
           </button>
         </div>
       </div>
@@ -115,6 +103,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import { useModalA11y } from '../composables/useModalA11y';
+import { PhArrowUp } from '@phosphor-icons/vue';
 
 interface Props {
   isOpen: boolean;

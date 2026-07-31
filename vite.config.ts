@@ -45,7 +45,7 @@ export default defineConfig({
           // Firebase gets its own chunk (it's large)
           'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           // UI libraries
-          'ui-libs': ['lucide-vue-next', 'marked', 'dompurify'],
+          'ui-libs': ['@phosphor-icons/vue', 'marked', 'dompurify'],
           // Utilities
           'utils': ['uuid']
         },
@@ -78,7 +78,7 @@ export default defineConfig({
       'firebase/app',
       'firebase/auth',
       'firebase/firestore',
-      'lucide-vue-next',
+      '@phosphor-icons/vue',
       'marked',
       'dompurify',
       'uuid'

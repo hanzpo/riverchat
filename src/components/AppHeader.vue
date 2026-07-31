@@ -31,7 +31,7 @@
         class="btn-material text-xs flex items-center gap-1.5 px-3 py-2"
         title="Manage Rivers (Ctrl+K)"
       >
-        <Folder :size="14" />
+        <PhFolder :size="14" />
         <span>Rivers</span>
       </button>
       <button
@@ -39,17 +39,17 @@
         title="Search (coming soon)"
         disabled
       >
-        <Search :size="14" />
+        <PhMagnifyingGlass :size="14" />
       </button>
       <button
         @click="$emit('show-help')"
         class="btn-material p-2"
         title="Keyboard Shortcuts (Ctrl+?)"
       >
-        <HelpCircle :size="14" />
+        <PhQuestion :size="14" />
       </button>
       <button @click="$emit('show-settings')" class="btn-material p-2" title="Settings (Ctrl+,)">
-        <Settings :size="14" />
+        <PhGearSix :size="14" />
       </button>
 
       <!-- Auth button - show for anonymous or unauthenticated users -->
@@ -63,7 +63,7 @@
           isAuthenticating ? 'Signing in...' : currentUser?.isAnonymous ? 'Sign Up' : 'Sign In'
         "
       >
-        <UserIcon :size="14" />
+        <PhUser :size="14" />
         <span>{{
           isAuthenticating ? 'Signing in...' : currentUser?.isAnonymous ? 'Sign Up' : 'Sign In'
         }}</span>
@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { Folder, Search, HelpCircle, Settings, User as UserIcon } from 'lucide-vue-next';
+import { PhFolder, PhMagnifyingGlass, PhQuestion, PhGearSix, PhUser } from '@phosphor-icons/vue';
 import type { ChatPanelUser } from '../composables/useChatPanel';
 
 defineProps<{

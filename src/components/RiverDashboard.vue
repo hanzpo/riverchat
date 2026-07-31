@@ -79,7 +79,7 @@
                     style="padding: 4px 6px"
                     title="Save"
                   >
-                    <Check :size="14" />
+                    <PhCheck :size="14" />
                   </button>
                   <button
                     @mousedown.prevent="cancelRename"
@@ -87,7 +87,7 @@
                     style="padding: 4px 6px"
                     title="Cancel"
                   >
-                    <X :size="14" />
+                    <PhX :size="14" />
                   </button>
                 </div>
                 <!-- Normal river name display -->
@@ -124,7 +124,7 @@
                 style="padding: 6px 10px; font-size: 12px"
                 title="Rename"
               >
-                <Pencil :size="14" />
+                <PhPencilSimple :size="14" />
               </button>
               <button
                 @click="handleDeleteRiver(river)"
@@ -133,7 +133,7 @@
                 style="padding: 6px 10px; font-size: 12px"
                 title="Delete"
               >
-                <Trash2 :size="14" />
+                <PhTrash :size="14" />
               </button>
             </div>
           </div>
@@ -177,7 +177,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
 import type { River } from '../types';
-import { Pencil, Trash2, Check, X } from 'lucide-vue-next';
+import { PhPencilSimple, PhTrash, PhCheck, PhX } from '@phosphor-icons/vue';
 import ConfirmationModal from './ConfirmationModal.vue';
 
 interface Props {

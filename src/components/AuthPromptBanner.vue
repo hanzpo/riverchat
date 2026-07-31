@@ -9,20 +9,7 @@
         color: var(--color-primary);
       "
     >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="shrink-0"
-      >
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
+      <PhUser :size="16" class="shrink-0" />
       <span class="text-xs">{{ message }}</span>
       <button
         @click="$emit('sign-up')"
@@ -52,6 +39,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { PhUser } from '@phosphor-icons/vue';
 
 defineProps<{
   visible: boolean;

@@ -18,6 +18,8 @@
   --color-primary: #0d99ff;
   --color-primary-hover: #0084e8;
   --color-primary-muted: #0d99ff1a;
+  /* Secondary marks AI-authored content (vs primary for the user) */
+  --color-secondary: #06b6d4;
   --color-accent: #a259ff;
   --color-accent-hover: #8a3fff;
 

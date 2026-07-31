@@ -12,27 +12,131 @@
       <div class="mb-6">
         <!-- Branching tree visual -->
         <div class="flex justify-center mb-4">
+          <!-- Miniature of the river canvas: a user prompt card fanning out to
+               two model responses (one selected), with one branch explored further -->
           <svg
-            width="120"
-            height="80"
-            viewBox="0 0 120 80"
+            width="220"
+            height="120"
+            viewBox="0 0 220 120"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <!-- Root node -->
-            <circle cx="60" cy="12" r="8" fill="var(--color-primary)" opacity="0.8" />
-            <!-- Lines to children -->
-            <line x1="60" y1="20" x2="30" y2="44" stroke="var(--color-border)" stroke-width="2" />
-            <line x1="60" y1="20" x2="90" y2="44" stroke="var(--color-border)" stroke-width="2" />
-            <!-- Child nodes -->
-            <circle cx="30" cy="48" r="7" fill="var(--color-secondary)" opacity="0.7" />
-            <circle cx="90" cy="48" r="7" fill="var(--color-accent)" opacity="0.7" />
-            <!-- Grandchild lines -->
-            <line x1="30" y1="55" x2="15" y2="68" stroke="var(--color-border)" stroke-width="1.5" />
-            <line x1="30" y1="55" x2="45" y2="68" stroke="var(--color-border)" stroke-width="1.5" />
-            <!-- Grandchild nodes -->
-            <circle cx="15" cy="72" r="5" fill="var(--color-secondary)" opacity="0.5" />
-            <circle cx="45" cy="72" r="5" fill="var(--color-secondary)" opacity="0.5" />
+            <!-- Edges (bezier, like the canvas) -->
+            <path
+              d="M110,26 C110,42 57,42 57,50"
+              stroke="var(--color-border-light)"
+              stroke-width="1.5"
+            />
+            <path
+              d="M110,26 C110,42 163,42 163,50"
+              stroke="var(--color-border-light)"
+              stroke-width="1.5"
+            />
+            <path
+              d="M57,72 C57,86 29,86 29,94"
+              stroke="var(--color-border-light)"
+              stroke-width="1.5"
+            />
+            <path
+              d="M57,72 C57,86 85,86 85,94"
+              stroke="var(--color-border-light)"
+              stroke-width="1.5"
+            />
+            <!-- Root: user prompt -->
+            <g transform="translate(92,4)">
+              <rect
+                width="36"
+                height="22"
+                rx="6"
+                fill="#0d99ff2e"
+                stroke="var(--color-primary)"
+                stroke-opacity="0.9"
+                stroke-width="1.5"
+              />
+              <rect x="7" y="7" width="22" height="2.5" rx="1.25" fill="#ffffff" opacity="0.55" />
+              <rect x="7" y="12.5" width="14" height="2.5" rx="1.25" fill="#ffffff" opacity="0.3" />
+            </g>
+            <!-- Model A response -->
+            <g transform="translate(39,50)">
+              <rect
+                width="36"
+                height="22"
+                rx="6"
+                fill="#06b6d426"
+                stroke="var(--color-secondary)"
+                stroke-opacity="0.8"
+                stroke-width="1.5"
+              />
+              <rect x="7" y="7" width="22" height="2.5" rx="1.25" fill="#ffffff" opacity="0.45" />
+              <rect
+                x="7"
+                y="12.5"
+                width="16"
+                height="2.5"
+                rx="1.25"
+                fill="#ffffff"
+                opacity="0.25"
+              />
+            </g>
+            <!-- Model B response (selected) -->
+            <g transform="translate(145,50)">
+              <rect
+                x="-3.5"
+                y="-3.5"
+                width="43"
+                height="29"
+                rx="8.5"
+                stroke="var(--color-accent)"
+                stroke-opacity="0.35"
+                stroke-width="1.5"
+              />
+              <rect
+                width="36"
+                height="22"
+                rx="6"
+                fill="#a259ff26"
+                stroke="var(--color-accent)"
+                stroke-opacity="0.85"
+                stroke-width="1.5"
+              />
+              <rect x="7" y="7" width="22" height="2.5" rx="1.25" fill="#ffffff" opacity="0.45" />
+              <rect
+                x="7"
+                y="12.5"
+                width="16"
+                height="2.5"
+                rx="1.25"
+                fill="#ffffff"
+                opacity="0.25"
+              />
+            </g>
+            <!-- Explored branch -->
+            <g transform="translate(13,94)" opacity="0.75">
+              <rect
+                width="32"
+                height="20"
+                rx="5.5"
+                fill="#06b6d41f"
+                stroke="var(--color-secondary)"
+                stroke-opacity="0.55"
+                stroke-width="1.25"
+              />
+              <rect x="6" y="6" width="20" height="2.25" rx="1.1" fill="#ffffff" opacity="0.35" />
+              <rect x="6" y="11" width="13" height="2.25" rx="1.1" fill="#ffffff" opacity="0.2" />
+            </g>
+            <g transform="translate(69,94)" opacity="0.75">
+              <rect
+                width="32"
+                height="20"
+                rx="5.5"
+                fill="#0d99ff1f"
+                stroke="var(--color-primary)"
+                stroke-opacity="0.55"
+                stroke-width="1.25"
+              />
+              <rect x="6" y="6" width="20" height="2.25" rx="1.1" fill="#ffffff" opacity="0.35" />
+              <rect x="6" y="11" width="13" height="2.25" rx="1.1" fill="#ffffff" opacity="0.2" />
+            </g>
           </svg>
         </div>
 
@@ -79,19 +183,7 @@
                 : 'width: 40px; height: 40px; background: var(--color-primary); cursor: pointer;'
             "
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              style="color: white"
-            >
-              <path d="M12 19V5M5 12l7-7 7 7" />
-            </svg>
+            <PhArrowUp :size="18" style="color: white" />
           </button>
         </div>
       </div>
@@ -115,6 +207,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import { useModalA11y } from '../composables/useModalA11y';
+import { PhArrowUp } from '@phosphor-icons/vue';
 
 interface Props {
   isOpen: boolean;

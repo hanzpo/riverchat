@@ -25,16 +25,7 @@
             style="color: var(--color-text-secondary)"
             title="Dismiss"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <PhX :size="16" weight="bold" />
           </button>
         </div>
         <button
@@ -51,6 +42,7 @@
 
 <script setup lang="ts">
 import type { TourTip } from '../composables/useOnboardingTour';
+import { PhX } from '@phosphor-icons/vue';
 
 defineProps<{
   visible: boolean;

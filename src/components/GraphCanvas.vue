@@ -57,7 +57,7 @@
       <!-- Pane Context Menu (when no node is selected) -->
       <template v-if="!contextMenu.node && contextMenu.selectedNodes.length === 0">
         <div class="context-menu-item" @click="handleCreateRootNode">
-          <Plus :size="16" />
+          <PhPlus :size="16" />
           <span>New Root Node</span>
         </div>
       </template>
@@ -69,7 +69,7 @@
         </div>
 
         <div class="context-menu-item context-menu-item-danger" @click="handleDeleteMultipleNodes">
-          <Trash2 :size="16" />
+          <PhTrash :size="16" />
           <span>Delete Selected Nodes</span>
         </div>
       </template>
@@ -81,12 +81,12 @@
           class="context-menu-item"
           @click="handleEditAndResubmit"
         >
-          <Pencil :size="16" />
+          <PhPencilSimple :size="16" />
           <span>Edit & Resubmit</span>
         </div>
 
         <div class="context-menu-item" @click="handleBranchFromHere">
-          <GitBranch :size="16" />
+          <PhGitBranch :size="16" />
           <span>Branch From Here</span>
         </div>
 
@@ -95,22 +95,22 @@
           class="context-menu-item"
           @click="handleRegenerateResponse"
         >
-          <RotateCw :size="16" />
+          <PhArrowClockwise :size="16" />
           <span>Regenerate Response</span>
         </div>
 
         <div class="context-menu-item" @click="handleCopyMessage">
-          <Copy :size="16" />
+          <PhCopy :size="16" />
           <span>Copy Message</span>
         </div>
 
         <div class="context-menu-item" @click="handleViewFull">
-          <Eye :size="16" />
+          <PhEye :size="16" />
           <span>View Full Message</span>
         </div>
 
         <div class="context-menu-item context-menu-item-danger" @click="handleDeleteBranch">
-          <Trash2 :size="16" />
+          <PhTrash :size="16" />
           <span>Delete Branch</span>
         </div>
       </template>
@@ -126,7 +126,15 @@ import { Background } from '@vue-flow/background';
 import { Controls } from '@vue-flow/controls';
 import { MiniMap } from '@vue-flow/minimap';
 import type { MessageNode, VueFlowNode, VueFlowEdge } from '../types';
-import { Plus, Trash2, Pencil, GitBranch, RotateCw, Copy, Eye } from 'lucide-vue-next';
+import {
+  PhPlus,
+  PhTrash,
+  PhPencilSimple,
+  PhGitBranch,
+  PhArrowClockwise,
+  PhCopy,
+  PhEye,
+} from '@phosphor-icons/vue';
 import CustomNode from './CustomNode.vue';
 
 // Import Vue Flow styles

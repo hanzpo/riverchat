@@ -22,8 +22,8 @@
             : 'background: rgba(162, 89, 255, 0.1); color: var(--color-accent); border: 1px solid var(--color-accent);'
         "
       >
-        <User v-if="data.type === 'user'" :size="11" />
-        <Bot v-else :size="11" />
+        <PhUser v-if="data.type === 'user'" :size="11" />
+        <PhRobot v-else :size="11" />
         <span>{{ data.type === 'user' ? 'USER' : 'AI' }}</span>
       </span>
       <span
@@ -76,7 +76,7 @@
           border: 1px solid var(--color-error);
         "
       >
-        <AlertTriangle :size="12" />
+        <PhWarning :size="12" />
         <span>Error</span>
       </div>
       <div v-if="data.error" class="error-tooltip">{{ data.error }}</div>
@@ -91,7 +91,7 @@
 
 <script setup lang="ts">
 import type { MessageNode } from '../types';
-import { User, Bot, AlertTriangle } from 'lucide-vue-next';
+import { PhUser, PhRobot, PhWarning } from '@phosphor-icons/vue';
 
 interface Props {
   data: MessageNode;

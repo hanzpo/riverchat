@@ -191,11 +191,11 @@
                 <button
                   v-if="subscription.tier.value === 'free'"
                   @click="handleUpgrade('pro')"
-                  :disabled="isUpgrading"
+                  :disabled="upgradingTier !== null"
                   class="mt-4 w-full text-xs font-bold text-center py-2 rounded-md transition-all hover:opacity-80"
                   style="background: var(--color-primary); color: var(--color-background)"
                 >
-                  {{ isUpgrading ? 'Redirecting...' : 'Upgrade to Pro' }}
+                  {{ upgradingTier === 'pro' ? 'Redirecting...' : 'Upgrade to Pro' }}
                 </button>
                 <div
                   v-else-if="subscription.tier.value === 'pro'"
@@ -234,11 +234,11 @@
                 <button
                   v-if="subscription.tier.value !== 'max'"
                   @click="handleUpgrade('max')"
-                  :disabled="isUpgrading"
+                  :disabled="upgradingTier !== null"
                   class="mt-4 w-full text-xs font-bold text-center py-2 rounded-md transition-all hover:opacity-80"
                   style="background: var(--color-primary); color: var(--color-background)"
                 >
-                  {{ isUpgrading ? 'Redirecting...' : 'Upgrade to Max' }}
+                  {{ upgradingTier === 'max' ? 'Redirecting...' : 'Upgrade to Max' }}
                 </button>
                 <div
                   v-else
@@ -564,7 +564,7 @@ const availableModels = computed(() => subscription.availableModels.value);
 const sortedModels = computed(() => sortModels([...availableModels.value]));
 
 // Plan tab state
-const isUpgrading = ref(false);
+const upgradingTier = ref<'pro' | 'max' | null>(null);
 const isBuyingCredits = ref(false);
 const customTopupAmount = ref<number | null>(null);
 
@@ -628,14 +628,14 @@ async function handleRefreshModels() {
 }
 
 async function handleUpgrade(tier: 'pro' | 'max') {
-  isUpgrading.value = true;
+  upgradingTier.value = tier;
   try {
     await subscription.upgradeToTier(tier);
   } catch (error) {
     console.error('Failed to start checkout:', error);
     alert('Failed to start checkout. Please try again.');
   } finally {
-    isUpgrading.value = false;
+    upgradingTier.value = null;
   }
 }
 

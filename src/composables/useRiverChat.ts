@@ -642,6 +642,32 @@ export function useRiverChat() {
     selectedNodeId.value = null;
   }
 
+  // Validate selected model IDs against the loaded catalog, falling back to
+  // the default model when none survive. Persists any correction.
+  async function validateSelectedModels(): Promise<void> {
+    if (subscription.availableModels.value.length === 0) return;
+
+    const availableIds = new Set(subscription.availableModels.value.map((m) => m.id));
+    const currentIds = settings.value.selectedModelIds || [];
+    const validIds = currentIds.filter((id) => availableIds.has(id));
+
+    if (validIds.length === 0) {
+      // No valid models selected — set default
+      const defaultModel = subscription.availableModels.value.find(
+        (m) => m.id === DEFAULT_MODEL_ID
+      );
+      settings.value.selectedModelIds = [
+        defaultModel?.id ?? subscription.availableModels.value[0]!.id,
+      ];
+      await FirestoreStorageService.saveSettings(settings.value);
+    } else if (validIds.length !== currentIds.length) {
+      // Some models were stale — keep only valid ones
+      settings.value.selectedModelIds = validIds;
+      await FirestoreStorageService.saveSettings(settings.value);
+    }
+    settings.value.lastModelRefresh = Date.now();
+  }
+
   // Initialize - load data and subscription state.
   // Serialized: concurrent calls wait for the current run to finish,
   // then a single force-refresh runs if any caller requested one.
@@ -666,39 +692,33 @@ export function useRiverChat() {
 
     initPromise = (async () => {
       try {
-        // Load settings from cache first for instant UI, then sync in background
-        console.log('[useRiverChat] Loading settings from storage...');
-        settings.value = await FirestoreStorageService.getSettings(!forceRefresh);
-        console.log('[useRiverChat] Settings loaded successfully');
+        // Balance and the model catalog come from Cloud Functions, which can
+        // take seconds on a cold start. The UI already renders with
+        // FALLBACK_MODELS and a default balance, so refresh them in the
+        // background instead of holding the loading overlay hostage.
+        const backgroundRefresh = Promise.all([
+          subscription.refreshBalance(),
+          subscription.refreshModels(),
+        ]);
 
-        // Load subscription balance and models from server
-        await Promise.all([subscription.refreshBalance(), subscription.refreshModels()]);
+        // Settings (cache-first) and the rivers list are independent — load
+        // them in parallel. Rivers bypass the cache on force refresh to avoid
+        // stale cross-user data.
+        console.log('[useRiverChat] Loading settings and rivers...');
+        const [loadedSettings] = await Promise.all([
+          FirestoreStorageService.getSettings(!forceRefresh),
+          refreshRivers(forceRefresh),
+        ]);
+        settings.value = loadedSettings;
+        console.log('[useRiverChat] Settings and rivers loaded');
 
-        // Validate and set default selected models
-        if (subscription.availableModels.value.length > 0) {
-          const availableIds = new Set(subscription.availableModels.value.map((m) => m.id));
-          const currentIds = settings.value.selectedModelIds || [];
-          const validIds = currentIds.filter((id) => availableIds.has(id));
-
-          if (validIds.length === 0) {
-            // No valid models selected — set default
-            const defaultModel = subscription.availableModels.value.find(
-              (m) => m.id === DEFAULT_MODEL_ID
-            );
-            settings.value.selectedModelIds = [
-              defaultModel?.id ?? subscription.availableModels.value[0]!.id,
-            ];
-            await FirestoreStorageService.saveSettings(settings.value);
-          } else if (validIds.length !== currentIds.length) {
-            // Some models were stale — keep only valid ones
-            settings.value.selectedModelIds = validIds;
-            await FirestoreStorageService.saveSettings(settings.value);
-          }
-          settings.value.lastModelRefresh = Date.now();
-        }
-
-        // Load rivers (bypass cache on force refresh to avoid stale cross-user data)
-        await refreshRivers(forceRefresh);
+        // Once the server catalog arrives, validate the selected models in
+        // the background (refreshBalance/refreshModels never reject).
+        void backgroundRefresh.then(() =>
+          validateSelectedModels().catch((error) =>
+            console.error('[useRiverChat] Failed to validate selected models:', error)
+          )
+        );
 
         // Load the last visited river, or fall back to the most recent river
         if (allRivers.value && allRivers.value.length > 0) {

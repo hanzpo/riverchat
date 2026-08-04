@@ -248,9 +248,12 @@
       "
     />
 
-    <!-- Credit Warning Banner -->
+    <!-- Credit Warning Banner (balance loads in the background — don't flash
+         a zero-balance warning before the first refresh lands) -->
     <CreditWarningBanner
-      v-if="hasInitialized && subscription.tier.value === 'free'"
+      v-if="
+        hasInitialized && !subscription.isLoadingBalance.value && subscription.tier.value === 'free'
+      "
       :is-low="subscription.isLowBalance.value"
       :is-critical="subscription.isCriticalBalance.value"
       :is-zero="subscription.isZeroBalance.value"

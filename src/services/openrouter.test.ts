@@ -15,7 +15,7 @@ describe('filterModelsByTier', () => {
 
     expect(accessible.every((m) => m.category === 'budget')).toBe(true);
     expect(inaccessible.every((m) => m.category !== 'budget')).toBe(true);
-    expect(accessible.length).toBe(4); // 4 budget models
+    expect(accessible.length).toBe(9); // 9 budget models
   });
 
   it('pro tier can access budget, standard, and premium models', () => {
@@ -27,8 +27,8 @@ describe('filterModelsByTier', () => {
       true
     );
     expect(inaccessible.every((m) => m.category === 'frontier')).toBe(true);
-    expect(accessible.length).toBe(16); // 4 + 6 + 6
-    expect(inaccessible.length).toBe(3); // 3 frontier
+    expect(accessible.length).toBe(28); // 9 + 11 + 8
+    expect(inaccessible.length).toBe(5); // 5 frontier
   });
 
   it('max tier can access all models', () => {
@@ -42,7 +42,7 @@ describe('filterModelsByTier', () => {
 describe('getAccessibleModels', () => {
   it('free tier returns only budget models', () => {
     const models = getAccessibleModels(FALLBACK_MODELS, 'free');
-    expect(models.length).toBe(4);
+    expect(models.length).toBe(9);
     expect(models.every((m) => m.category === 'budget')).toBe(true);
   });
 
@@ -70,8 +70,8 @@ describe('sortModels', () => {
     const sorted = sortModels([...FALLBACK_MODELS]);
     const budgetModels = sorted.filter((m) => m.category === 'budget');
 
-    // deepseek/deepseek-v3.2 is first priority budget model
-    expect(budgetModels[0]!.id).toBe('deepseek/deepseek-v3.2');
+    // deepseek/deepseek-v4-flash-0731 is first priority budget model
+    expect(budgetModels[0]!.id).toBe('deepseek/deepseek-v4-flash-0731');
     // meta-llama/llama-4-maverick is second
     expect(budgetModels[1]!.id).toBe('meta-llama/llama-4-maverick');
   });
@@ -86,10 +86,10 @@ describe('groupModelsByCategory', () => {
   it('groups models into correct categories', () => {
     const groups = groupModelsByCategory(FALLBACK_MODELS);
 
-    expect(groups.budget.length).toBe(4);
-    expect(groups.standard.length).toBe(6);
-    expect(groups.premium.length).toBe(6);
-    expect(groups.frontier.length).toBe(3);
+    expect(groups.budget.length).toBe(9);
+    expect(groups.standard.length).toBe(11);
+    expect(groups.premium.length).toBe(8);
+    expect(groups.frontier.length).toBe(5);
   });
 
   it('each model appears in exactly one category', () => {

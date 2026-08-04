@@ -4,7 +4,7 @@ export type SubscriptionTier = 'free' | 'pro' | 'max';
 export type ModelCategory = 'budget' | 'standard' | 'premium' | 'frontier';
 
 export interface LLMModel {
-  id: string; // OpenRouter model ID (e.g., "openai/gpt-5.2")
+  id: string; // OpenRouter model ID (e.g., "openai/gpt-5.4")
   name: string; // Display name
   description?: string;
   contextLength: number;
@@ -125,7 +125,7 @@ export interface VueFlowEdge {
  * model catalog (src/config/models.ts).
  */
 export const DEFAULT_MODEL_ID: string =
-  import.meta.env.VITE_DEFAULT_MODEL_ID || 'deepseek/deepseek-v3.2';
+  import.meta.env.VITE_DEFAULT_MODEL_ID || 'deepseek/deepseek-v4-flash-0731';
 
 /** Resolve model IDs to full LLMModel objects */
 export function resolveModelIds(ids: string[], availableModels: LLMModel[]): LLMModel[] {

@@ -5,7 +5,7 @@ const MARKUP = 1.5;
 
 describe('FALLBACK_MODELS', () => {
   it('contains all expected models', () => {
-    expect(FALLBACK_MODELS.length).toBe(19);
+    expect(FALLBACK_MODELS.length).toBe(33);
   });
 
   it('every model has required fields', () => {
@@ -25,18 +25,18 @@ describe('FALLBACK_MODELS', () => {
     for (const model of FALLBACK_MODELS) {
       counts[model.category]++;
     }
-    expect(counts.budget).toBe(4);
-    expect(counts.standard).toBe(6);
-    expect(counts.premium).toBe(6);
-    expect(counts.frontier).toBe(3);
+    expect(counts.budget).toBe(9);
+    expect(counts.standard).toBe(11);
+    expect(counts.premium).toBe(8);
+    expect(counts.frontier).toBe(5);
   });
 
   it('pricing includes 1.5x markup over base prices', () => {
     // Verify the first budget model (Llama 4 Scout)
     const scout = FALLBACK_MODELS.find((m) => m.id === 'meta-llama/llama-4-scout')!;
     expect(scout).toBeDefined();
-    // Base: [0.08, 0.30], Markup: [0.12, 0.45]
-    expect(scout.pricing.prompt).toBeCloseTo(0.08 * MARKUP, 4);
+    // Base: [0.10, 0.30], Markup: [0.15, 0.45]
+    expect(scout.pricing.prompt).toBeCloseTo(0.1 * MARKUP, 4);
     expect(scout.pricing.completion).toBeCloseTo(0.3 * MARKUP, 4);
   });
 

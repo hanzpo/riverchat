@@ -120,6 +120,28 @@ export class LLMAPIService {
     throw lastError;
   }
 
+  /**
+   * Normalize an error payload from the stream into a display string. Our
+   * proxy sends `{error: string}`, but OpenRouter errors forwarded mid-stream
+   * arrive as `{error: {message, code, metadata?: {raw?}}}` — without this,
+   * those would render as "[object Object]".
+   */
+  private static describeErrorPayload(raw: unknown): string | undefined {
+    if (typeof raw === 'string' && raw.trim().length > 0) {
+      return raw;
+    }
+    if (raw && typeof raw === 'object') {
+      const err = raw as { message?: unknown; metadata?: { raw?: unknown } };
+      if (typeof err.metadata?.raw === 'string' && err.metadata.raw.trim().length > 0) {
+        return err.metadata.raw;
+      }
+      if (typeof err.message === 'string' && err.message.trim().length > 0) {
+        return err.message;
+      }
+    }
+    return undefined;
+  }
+
   /** Validate the proxy's usage payload and return a well-typed object (or undefined). */
   private static parseUsagePayload(parsed: any): UsageMetadata | undefined {
     if (
@@ -187,7 +209,9 @@ export class LLMAPIService {
       const idToken = await user.getIdToken();
 
       if (!STREAM_CHAT_URL) {
-        onError('Chat service URL not configured');
+        onError(
+          'Chat service URL is not configured (VITE_STREAM_CHAT_URL is missing from the build environment).'
+        );
         return;
       }
 
@@ -213,12 +237,12 @@ export class LLMAPIService {
       );
 
       if (!response.ok) {
-        let errorMessage = `API error: ${response.status}`;
+        let errorMessage = `The chat service returned an error (HTTP ${response.status}). Please try again.`;
         try {
           const text = await response.text();
           try {
             const error = JSON.parse(text);
-            errorMessage = error.error || errorMessage;
+            errorMessage = this.describeErrorPayload(error.error) || errorMessage;
           } catch {
             // Response body is not JSON (e.g. HTML error page)
             if (text && text.length < 200) {
@@ -278,9 +302,12 @@ export class LLMAPIService {
                 continue;
               }
 
-              // Check for error
+              // Check for error (string from our proxy, object from OpenRouter)
               if (parsed.error) {
-                onError(parsed.error);
+                onError(
+                  LLMAPIService.describeErrorPayload(parsed.error) ||
+                    `${model.name} returned an error without details.`
+                );
                 return;
               }
 
@@ -313,7 +340,14 @@ export class LLMAPIService {
         return;
       }
 
-      const errorMessage = error instanceof Error ? error.message : 'Streaming error';
+      // fetch() rejects with TypeError on network failures ("Failed to fetch"),
+      // which is meaningless to users — translate it.
+      let errorMessage = 'Streaming error';
+      if (error instanceof TypeError) {
+        errorMessage = 'Network error while contacting the chat service. Check your connection and try again.';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
 
       captureException(error instanceof Error ? error : new Error(errorMessage), {
         context: 'proxy_streaming',

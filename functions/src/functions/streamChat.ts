@@ -17,6 +17,7 @@ import {
   streamFromOpenRouter,
   getGenerationInfo,
   estimateTokenCount,
+  OpenRouterError,
 } from '../services/openrouter.js';
 
 // Same explicit origin whitelist as the checkout functions.
@@ -35,6 +36,26 @@ const MAX_TOTAL_CONTENT_CHARS = 400_000;
 // decrement in `finally` runs. In-memory state simply resets on recycle.
 const MAX_CONCURRENT_STREAMS_PER_USER = 5;
 const activeStreamsByUid = new Map<string, number>();
+
+/**
+ * User-facing message for an upstream OpenRouter failure. Provider error
+ * text is passed through (it's the most actionable detail we have — e.g.
+ * geo restrictions or model maintenance windows), except for 402, which
+ * means OUR OpenRouter account is out of credits and must not be confused
+ * with the user's own balance.
+ */
+function buildUpstreamErrorMessage(modelName: string, err: OpenRouterError): string {
+  if (err.status === 402) {
+    return 'The chat service is temporarily unavailable. Please try again later.';
+  }
+  if (err.status === 429) {
+    return `${modelName} is receiving too many requests right now. Please try again in a moment.`;
+  }
+  if (err.status >= 500) {
+    return `${modelName} is having temporary issues (provider error ${err.status}). Please try again shortly.`;
+  }
+  return `${modelName} could not process this request: ${err.providerMessage}`;
+}
 
 /** Final SSE usage event sent to the client after the stream completes. */
 interface UsageEvent {
@@ -377,9 +398,11 @@ async function handleStreamRequest(
       );
     }
     console.error('Stream error:', err);
-    safeWrite(
-      `data: ${JSON.stringify({ error: 'An error occurred while processing your request.' })}\n\n`
-    );
+    let userErrorMessage = `${modelConfig.displayName} did not return a response. Please try again.`;
+    if (err instanceof OpenRouterError) {
+      userErrorMessage = buildUpstreamErrorMessage(modelConfig.displayName, err);
+    }
+    safeWrite(`data: ${JSON.stringify({ error: userErrorMessage })}\n\n`);
     if (!res.writableEnded) res.end();
     return;
   }

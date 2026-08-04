@@ -167,6 +167,19 @@
             >
           </div>
 
+          <!-- Error detail -->
+          <div
+            v-if="message.state === 'error' && message.error"
+            class="text-[11.5px] leading-snug mb-2.5 px-2.5 py-2 rounded-md break-words"
+            style="
+              color: var(--color-error);
+              background: var(--color-error-bg);
+              border: 1px solid var(--color-error);
+            "
+          >
+            {{ message.error }}
+          </div>
+
           <!-- Footer -->
           <div class="flex justify-between items-center text-[11px] text-white/70">
             <span class="font-medium">
@@ -174,11 +187,10 @@
             </span>
             <span
               v-if="message.state === 'error'"
-              class="error-badge-wrapper relative text-error font-bold flex items-center gap-1"
+              class="text-error font-bold flex items-center gap-1"
             >
               <PhWarning :size="12" />
               <span>Error</span>
-              <span v-if="message.error" class="error-tooltip">{{ message.error }}</span>
             </span>
           </div>
         </div>

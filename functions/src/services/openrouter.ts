@@ -1,6 +1,51 @@
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const OPENROUTER_GENERATION_URL = 'https://openrouter.ai/api/v1/generation';
 
+const MAX_ERROR_DETAIL_CHARS = 300;
+
+/**
+ * Error from the OpenRouter API carrying the HTTP status and the most
+ * specific human-readable detail available (provider error text when present,
+ * OpenRouter's own message otherwise). `providerMessage` is safe to show to
+ * end users — it never contains the raw response body of non-JSON errors.
+ */
+export class OpenRouterError extends Error {
+  readonly status: number;
+  readonly providerMessage: string;
+
+  constructor(status: number, providerMessage: string) {
+    super(`OpenRouter API error ${status}: ${providerMessage}`);
+    this.name = 'OpenRouterError';
+    this.status = status;
+    this.providerMessage = providerMessage;
+  }
+}
+
+/**
+ * Pull the most specific message out of an OpenRouter error body.
+ * Shape: { error: { message, code, metadata?: { raw?, provider_name? } } }
+ * where metadata.raw is the upstream provider's own error text (e.g.
+ * "This model is only available in the United States.").
+ */
+function extractErrorDetail(body: string): string {
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { message?: unknown; metadata?: { raw?: unknown } };
+    };
+    const raw = parsed.error?.metadata?.raw;
+    if (typeof raw === 'string' && raw.trim().length > 0) {
+      return raw.trim().slice(0, MAX_ERROR_DETAIL_CHARS);
+    }
+    const message = parsed.error?.message;
+    if (typeof message === 'string' && message.trim().length > 0) {
+      return message.trim().slice(0, MAX_ERROR_DETAIL_CHARS);
+    }
+  } catch {
+    // Non-JSON body (e.g. an HTML error page) — don't surface it to users.
+  }
+  return 'The provider did not return details.';
+}
+
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -56,9 +101,7 @@ export async function streamFromOpenRouter(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(
-      `OpenRouter API error ${response.status}: ${errorBody}`
-    );
+    throw new OpenRouterError(response.status, extractErrorDetail(errorBody));
   }
 
   return response;

@@ -40,7 +40,7 @@ describe('CATEGORY_MIN_TIER', () => {
 
 describe('DEFAULT_MODEL_ID', () => {
   it('points to a valid budget model', () => {
-    expect(DEFAULT_MODEL_ID).toBe('deepseek/deepseek-v3.2');
+    expect(DEFAULT_MODEL_ID).toBe('deepseek/deepseek-v4-flash-0731');
     const model = FALLBACK_MODELS.find(m => m.id === DEFAULT_MODEL_ID);
     expect(model).toBeDefined();
     expect(model!.category).toBe('budget');
@@ -49,28 +49,28 @@ describe('DEFAULT_MODEL_ID', () => {
 
 describe('resolveModelIds', () => {
   it('resolves valid model IDs to full model objects', () => {
-    const ids = ['deepseek/deepseek-v3.2', 'anthropic/claude-sonnet-4.6'];
+    const ids = ['deepseek/deepseek-v4-flash-0731', 'anthropic/claude-sonnet-5'];
     const resolved = resolveModelIds(ids, FALLBACK_MODELS);
 
     expect(resolved.length).toBe(2);
-    expect(resolved[0]!.id).toBe('deepseek/deepseek-v3.2');
-    expect(resolved[1]!.id).toBe('anthropic/claude-sonnet-4.6');
+    expect(resolved[0]!.id).toBe('deepseek/deepseek-v4-flash-0731');
+    expect(resolved[1]!.id).toBe('anthropic/claude-sonnet-5');
   });
 
   it('filters out unknown model IDs', () => {
-    const ids = ['deepseek/deepseek-v3.2', 'nonexistent/model'];
+    const ids = ['deepseek/deepseek-v4-flash-0731', 'nonexistent/model'];
     const resolved = resolveModelIds(ids, FALLBACK_MODELS);
 
     expect(resolved.length).toBe(1);
-    expect(resolved[0]!.id).toBe('deepseek/deepseek-v3.2');
+    expect(resolved[0]!.id).toBe('deepseek/deepseek-v4-flash-0731');
   });
 
   it('preserves order of input IDs', () => {
-    const ids = ['anthropic/claude-sonnet-4.6', 'deepseek/deepseek-v3.2'];
+    const ids = ['anthropic/claude-sonnet-5', 'deepseek/deepseek-v4-flash-0731'];
     const resolved = resolveModelIds(ids, FALLBACK_MODELS);
 
-    expect(resolved[0]!.id).toBe('anthropic/claude-sonnet-4.6');
-    expect(resolved[1]!.id).toBe('deepseek/deepseek-v3.2');
+    expect(resolved[0]!.id).toBe('anthropic/claude-sonnet-5');
+    expect(resolved[1]!.id).toBe('deepseek/deepseek-v4-flash-0731');
   });
 
   it('returns empty array for empty input', () => {

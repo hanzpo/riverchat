@@ -49,7 +49,7 @@ describe('MODEL_CATALOG', () => {
 
 describe('getModelConfig', () => {
   it('finds a known model', () => {
-    const model = getModelConfig('anthropic/claude-sonnet-4.6');
+    const model = getModelConfig('anthropic/claude-sonnet-5');
     expect(model).toBeDefined();
     expect(model!.provider).toBe('Anthropic');
   });
@@ -89,7 +89,7 @@ describe('calculateCostCents', () => {
 
   it('costs zero for zero tokens', () => {
     const { ourCostCents, userCostCents } = calculateCostCents(
-      'anthropic/claude-sonnet-4.6',
+      'anthropic/claude-sonnet-5',
       0,
       0
     );
@@ -99,7 +99,7 @@ describe('calculateCostCents', () => {
 
   it('rounds any non-zero usage up to at least 1 cent', () => {
     const { ourCostCents, userCostCents } = calculateCostCents(
-      'meta-llama/llama-4-scout', // cheapest model
+      'deepseek/deepseek-v4-flash-0731', // cheapest model
       1,
       0
     );
@@ -107,11 +107,11 @@ describe('calculateCostCents', () => {
     expect(userCostCents).toBe(1);
   });
 
-  it('computes exact known values (claude-sonnet-4.6, 1k prompt + 2k completion)', () => {
+  it('computes exact known values (claude-sonnet-5, 1k prompt + 2k completion)', () => {
     // our: 1000 * $3/M + 2000 * $15/M = $0.033 -> ceil(3.3c) = 4c
     // user: 1000 * $4.5/M + 2000 * $22.5/M = $0.0495 -> ceil(4.95c) = 5c
     const { ourCostCents, userCostCents } = calculateCostCents(
-      'anthropic/claude-sonnet-4.6',
+      'anthropic/claude-sonnet-5',
       1000,
       2000
     );
@@ -120,15 +120,15 @@ describe('calculateCostCents', () => {
   });
 
   it('computes exact integer-cent values without float drift (1M tokens)', () => {
-    // 1M prompt tokens of minimax (or $0.27/M, user $0.405/M):
-    // our = exactly 27c, user = exactly 40.5c -> ceil 41c.
+    // 1M prompt tokens of kimi-k2.6 (or $0.589/M, user $0.8835/M):
+    // our = 58.9c -> ceil 59c, user = 88.35c -> ceil 89c.
     const { ourCostCents, userCostCents } = calculateCostCents(
-      'minimax/minimax-m2.5',
+      'moonshotai/kimi-k2.6',
       1_000_000,
       0
     );
-    expect(ourCostCents).toBe(27);
-    expect(userCostCents).toBe(41);
+    expect(ourCostCents).toBe(59);
+    expect(userCostCents).toBe(89);
   });
 
   it('always charges the user at least our cost', () => {
@@ -143,11 +143,11 @@ describe('calculateCostCents', () => {
   });
 
   it('is deterministic and monotonic in token counts', () => {
-    const a = calculateCostCents('openai/gpt-5.1', 50_000, 10_000);
-    const b = calculateCostCents('openai/gpt-5.1', 50_000, 10_000);
+    const a = calculateCostCents('openai/gpt-5.6-sol', 50_000, 10_000);
+    const b = calculateCostCents('openai/gpt-5.6-sol', 50_000, 10_000);
     expect(a).toEqual(b);
 
-    const more = calculateCostCents('openai/gpt-5.1', 50_001, 10_000);
+    const more = calculateCostCents('openai/gpt-5.6-sol', 50_001, 10_000);
     expect(more.userCostCents).toBeGreaterThanOrEqual(a.userCostCents);
   });
 });

@@ -23,6 +23,7 @@
     "@vue-flow/minimap": "^1.5.4",
     "dompurify": "^3.2.7",
     "firebase": "^12.5.0",
+    "firebase-tools": "^15.25.1",
     "marked": "^16.3.0",
     "posthog-js": "^1.290.0",
     "uuid": "^13.0.0",

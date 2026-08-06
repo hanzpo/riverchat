@@ -164,30 +164,3 @@
 .animate-slide-in {
   animation: slide-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-/* Error tooltip */
-.error-tooltip {
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 6px);
-  right: 0;
-  background: var(--color-background);
-  color: var(--color-error);
-  border: 1px solid var(--color-error);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.4;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-width: 280px;
-  width: max-content;
-  z-index: 50;
-  pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.error-badge-wrapper:hover .error-tooltip {
-  display: block;
-}

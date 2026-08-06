@@ -172,7 +172,7 @@ const DEFS: ModelDef[] = [
     name: 'Nemotron 3 Ultra',
     provider: 'NVIDIA',
     category: 'standard',
-    contextLength: 512288,
+    contextLength: 524288,
     orPrice: [0.6, 3.6],
   },
   {

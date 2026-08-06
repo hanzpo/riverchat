@@ -50,7 +50,7 @@ const MODEL_DEFS: ModelDef[] = [
   { id: 'z-ai/glm-5.2', displayName: 'GLM 5.2', provider: 'Z.ai', category: 'standard', contextLength: 1048576, orPrice: [0.76, 2.42] },
   { id: 'bytedance-seed/seed-2.0-lite', displayName: 'Seed 2.0 Lite', provider: 'ByteDance', category: 'standard', contextLength: 262144, orPrice: [0.25, 2.00] },
   { id: 'amazon/nova-2-lite-v1', displayName: 'Nova 2 Lite', provider: 'Amazon', category: 'standard', contextLength: 1000000, orPrice: [0.30, 2.50] },
-  { id: 'nvidia/nemotron-3-ultra-550b-a55b', displayName: 'Nemotron 3 Ultra', provider: 'NVIDIA', category: 'standard', contextLength: 512288, orPrice: [0.60, 3.60] },
+  { id: 'nvidia/nemotron-3-ultra-550b-a55b', displayName: 'Nemotron 3 Ultra', provider: 'NVIDIA', category: 'standard', contextLength: 524288, orPrice: [0.60, 3.60] },
   { id: 'thinkingmachines/inkling', displayName: 'Inkling', provider: 'Thinking Machines', category: 'standard', contextLength: 1048576, orPrice: [1.00, 4.05] },
 
   // Premium

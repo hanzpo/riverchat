@@ -40,12 +40,12 @@ const activeStreamsByUid = new Map<string, number>();
 /**
  * User-facing message for an upstream OpenRouter failure. Provider error
  * text is passed through (it's the most actionable detail we have — e.g.
- * geo restrictions or model maintenance windows), except for 402, which
- * means OUR OpenRouter account is out of credits and must not be confused
- * with the user's own balance.
+ * geo restrictions or model maintenance windows), except for 401/402, which
+ * mean OUR OpenRouter credentials/credits are broken and must not be
+ * confused with the user's own account or balance.
  */
 function buildUpstreamErrorMessage(modelName: string, err: OpenRouterError): string {
-  if (err.status === 402) {
+  if (err.status === 401 || err.status === 402) {
     return 'The chat service is temporarily unavailable. Please try again later.';
   }
   if (err.status === 429) {

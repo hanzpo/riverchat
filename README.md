@@ -1,5 +1,3 @@
-vibe coded 💀
-
 # RiverChat
 
 A non-linear chat application that visualizes AI conversations as branching graphs. Branch from any point in a conversation, run multiple models simultaneously, and explore different dialogue paths side by side.

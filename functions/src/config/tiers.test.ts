@@ -5,6 +5,8 @@ import {
   tierCanAccessCategory,
   minTierForCategory,
   getTierFromPriceId,
+  resolveModelAccess,
+  PREMIUM_TRIAL_MESSAGES,
   type ModelCategory,
   type SubscriptionTier,
   type TierConfig,
@@ -112,5 +114,42 @@ describe('getTierFromPriceId', () => {
     };
     expect(getTierFromPriceId('price_pro_123', unconfigured)).toBeNull();
     expect(getTierFromPriceId('', unconfigured)).toBeNull();
+  });
+});
+
+describe('resolveModelAccess', () => {
+  it('allows every category the tier includes, regardless of trial or prepaid', () => {
+    for (const tier of ALL_TIERS) {
+      for (const cat of ALL_CATEGORIES) {
+        if (tierCanAccessCategory(tier, cat)) {
+          expect(resolveModelAccess(tier, cat, 0, 99)).toEqual({ allowed: true, via: 'tier' });
+        }
+      }
+    }
+  });
+
+  it('unlocks every category with any prepaid balance', () => {
+    for (const cat of ['standard', 'premium', 'frontier'] as ModelCategory[]) {
+      expect(resolveModelAccess('free', cat, 1, 99)).toEqual({ allowed: true, via: 'prepaid' });
+    }
+    expect(resolveModelAccess('pro', 'frontier', 500, 0)).toEqual({ allowed: true, via: 'prepaid' });
+  });
+
+  it('does not treat zero or negative prepaid balance as access', () => {
+    expect(resolveModelAccess('free', 'frontier', 0, 0)).toEqual({ allowed: false });
+    expect(resolveModelAccess('free', 'frontier', -3, 0)).toEqual({ allowed: false });
+  });
+
+  it('gives free users a limited trial of standard and premium models only', () => {
+    for (const cat of ['standard', 'premium'] as ModelCategory[]) {
+      expect(resolveModelAccess('free', cat, 0, 0)).toEqual({ allowed: true, via: 'trial' });
+      expect(resolveModelAccess('free', cat, 0, PREMIUM_TRIAL_MESSAGES - 1)).toEqual({ allowed: true, via: 'trial' });
+      expect(resolveModelAccess('free', cat, 0, PREMIUM_TRIAL_MESSAGES)).toEqual({ allowed: false });
+    }
+    expect(resolveModelAccess('free', 'frontier', 0, 0)).toEqual({ allowed: false });
+  });
+
+  it('keeps frontier locked for pro users without prepaid credits', () => {
+    expect(resolveModelAccess('pro', 'frontier', 0, 0)).toEqual({ allowed: false });
   });
 });

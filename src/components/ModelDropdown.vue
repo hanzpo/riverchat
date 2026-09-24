@@ -43,6 +43,17 @@
               >
                 {{ CATEGORY_MIN_TIER[cat] === 'pro' ? 'Pro' : 'Max' }}
               </span>
+              <span
+                v-else-if="isTrialCategory(cat)"
+                class="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                style="
+                  background: var(--color-primary-muted);
+                  color: var(--color-primary);
+                  border: 1px solid var(--color-primary);
+                "
+              >
+                {{ premiumTrialRemaining }} free {{ premiumTrialRemaining === 1 ? 'try' : 'tries' }}
+              </span>
             </div>
             <button
               v-for="model in modelsInCategory(cat)"
@@ -94,6 +105,7 @@
       :target-tier="upgradePopover.targetTier"
       @close="upgradePopover.visible = false"
       @upgrade="handleUpgrade"
+      @buy-credits="handleBuyCredits"
     />
   </div>
 </template>
@@ -119,7 +131,8 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-const { canAccessCategory, upgradeToTier } = useSubscription();
+const { canAccessCategory, isTrialCategory, premiumTrialRemaining, upgradeToTier, buyCredits } =
+  useSubscription();
 const posthogAnalytics = usePostHog();
 
 const isOpen = ref(false);
@@ -159,7 +172,7 @@ function showUpgradeForModel(model: LLMModel, event: MouseEvent) {
     visible: true,
     position: { top: rect.top, left: rect.right + 8 },
     title: `Unlock ${model.name}`,
-    description: `${CATEGORY_LABELS[model.category]} models require a ${targetTier === 'max' ? 'Max' : 'Pro'} subscription.`,
+    description: `${CATEGORY_LABELS[model.category]} models need credits or a ${targetTier === 'max' ? 'Max' : 'Pro'} subscription.`,
     targetTier,
   };
   isOpen.value = false;
@@ -177,6 +190,16 @@ function handleUpgrade(tier: 'pro' | 'max') {
     target_tier: tier,
   });
   upgradeToTier(tier);
+}
+
+async function handleBuyCredits(amountCents: number) {
+  upgradePopover.value.visible = false;
+  posthogAnalytics.capture('upgrade_prompt_clicked', {
+    source: 'model_dropdown',
+    target_tier: 'credits',
+    amount_cents: amountCents,
+  });
+  await buyCredits(amountCents);
 }
 
 watch(isOpen, async (open) => {

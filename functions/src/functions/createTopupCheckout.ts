@@ -1,15 +1,11 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
 import {
   getOrCreateCustomer,
   createTopupCheckout as createTopupSession,
 } from '../services/stripe.js';
-import type { SubscriptionTier } from '../config/tiers.js';
 
 const MIN_TOPUP_CENTS = 500; // $5.00 minimum
 const MAX_TOPUP_CENTS = 50000; // $500.00 maximum
-
-const db = getFirestore();
 
 export const createTopupCheckout = onCall(
   { region: 'us-central1' },
@@ -18,14 +14,12 @@ export const createTopupCheckout = onCall(
       throw new HttpsError('unauthenticated', 'Must be signed in');
     }
 
-    // Only pro and max plans can buy prepaid credits
-    const userDoc = await db.doc(`users/${request.auth.uid}`).get();
-    const tier: SubscriptionTier =
-      (userDoc.data()?.subscriptionTier as SubscriptionTier) ?? 'free';
-    if (tier === 'free') {
+    // Credits are pay-as-you-go for every plan, but must belong to a real
+    // account: anonymous sessions can be lost with the browser's storage.
+    if (request.auth.token.firebase?.sign_in_provider === 'anonymous') {
       throw new HttpsError(
-        'permission-denied',
-        'Prepaid credits are only available on Pro and Max plans. Please upgrade to purchase credits.'
+        'failed-precondition',
+        'Create a free account first so your credits are saved.'
       );
     }
 

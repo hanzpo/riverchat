@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 import type { SubscriptionTier } from '../config/tiers.js';
-import { TIER_CONFIGS } from '../config/tiers.js';
+import { TIER_CONFIGS, PREMIUM_TRIAL_MESSAGES } from '../config/tiers.js';
 import { splitDeduction, computeReconciledBalances } from './creditMath.js';
 
 if (!admin.apps.length) {
@@ -15,6 +15,7 @@ export interface UserBalance {
   total: number; // cents
   tier: SubscriptionTier;
   currentPeriodEnd: admin.firestore.Timestamp | null;
+  premiumTrialUsed: number;
 }
 
 export interface DeductionResult {
@@ -81,6 +82,7 @@ export async function getBalance(uid: string): Promise<UserBalance> {
       total: credits + (data.prepaidCredits ?? 0),
       tier: 'free',
       currentPeriodEnd: data.currentPeriodEnd ?? null,
+      premiumTrialUsed: data.premiumTrialUsed ?? 0,
     };
   }
 
@@ -92,7 +94,23 @@ export async function getBalance(uid: string): Promise<UserBalance> {
     total: subCredits + prepaidCredits,
     tier: data.subscriptionTier ?? 'free',
     currentPeriodEnd: data.currentPeriodEnd ?? null,
+    premiumTrialUsed: data.premiumTrialUsed ?? 0,
   };
+}
+
+/**
+ * Atomically use one free trial message. Returns false when the trial is
+ * already used up (e.g. by a concurrent request), so callers fail closed.
+ */
+export async function consumePremiumTrial(uid: string): Promise<boolean> {
+  const userRef = db.doc(`users/${uid}`);
+  return db.runTransaction(async (tx) => {
+    const doc = await tx.get(userRef);
+    const used: number = doc.data()?.premiumTrialUsed ?? 0;
+    if (used >= PREMIUM_TRIAL_MESSAGES) return false;
+    tx.update(userRef, { premiumTrialUsed: used + 1 });
+    return true;
+  });
 }
 
 /**

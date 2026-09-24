@@ -34,6 +34,16 @@
         Upgrade to {{ targetTier === 'max' ? 'Max' : 'Pro' }} &mdash;
         {{ targetTier === 'max' ? '$100' : '$20' }}/mo
       </button>
+      <button
+        class="btn-material w-full text-xs mt-2"
+        style="padding: 7px 14px; font-weight: 600"
+        @click="$emit('buy-credits', 500)"
+      >
+        Or pay as you go &mdash; $5 credits
+      </button>
+      <p class="text-[10px] mt-2" style="color: var(--color-text-tertiary)">
+        Credits unlock every model, never expire, and you only pay for what you use.
+      </p>
     </div>
   </Teleport>
 </template>
@@ -56,6 +66,7 @@ withDefaults(defineProps<Props>(), {
 defineEmits<{
   (e: 'close'): void;
   (e: 'upgrade', tier: 'pro' | 'max'): void;
+  (e: 'buy-credits', amountCents: number): void;
 }>();
 
 const popoverRef = ref<HTMLElement | null>(null);

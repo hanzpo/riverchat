@@ -572,7 +572,28 @@ async function handleAuthenticated() {
   // is already triggered by the time this runs)
   showAuth.value = false;
   showToast('Successfully signed in!', 'success');
+
+  // Resume a credit purchase that required an account.
+  const pendingAmount = subscription.pendingCreditPurchase.value;
+  if (pendingAmount) {
+    try {
+      await subscription.buyCredits(pendingAmount);
+    } catch (error) {
+      console.error('Failed to start top-up after sign-in:', error);
+      showToast('Could not start checkout. Please try again from Settings.', 'error');
+    }
+  }
 }
+
+// Anonymous users must create an account before buying credits.
+watch(
+  () => subscription.authRequiredForPurchase.value,
+  (required) => {
+    if (!required) return;
+    subscription.authRequiredForPurchase.value = false;
+    showAuth.value = true;
+  }
+);
 
 // Settings Management
 async function handleSaveSettings(newSettings: Settings) {

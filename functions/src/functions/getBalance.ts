@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getBalance as getBalanceService } from '../services/credits.js';
+import { PREMIUM_TRIAL_MESSAGES } from '../config/tiers.js';
 
 export const getBalance = onCall(
   { region: 'us-central1' },
@@ -15,6 +16,7 @@ export const getBalance = onCall(
       total: balance.total,
       tier: balance.tier,
       currentPeriodEnd: balance.currentPeriodEnd?.toMillis() ?? null,
+      premiumTrialRemaining: Math.max(0, PREMIUM_TRIAL_MESSAGES - balance.premiumTrialUsed),
     };
   }
 );

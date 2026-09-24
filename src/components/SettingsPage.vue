@@ -263,52 +263,41 @@
               Buy Credits
             </h3>
             <p class="text-xs mb-4" style="color: var(--color-text-tertiary)">
-              Prepaid credits roll over and never expire. Use them when your monthly credits run
-              out.
+              Pay as you go: prepaid credits never expire, unlock every model, and are used after
+              your monthly credits run out.
             </p>
-            <template v-if="subscription.tier.value !== 'free'">
-              <div class="flex gap-2 mb-3">
-                <button
-                  v-for="amount in [500, 1000, 2000]"
-                  :key="amount"
-                  @click="handleBuyCredits(amount)"
-                  :disabled="isBuyingCredits"
-                  class="btn-material px-4 py-2 text-sm font-semibold flex-1"
-                >
-                  ${{ (amount / 100).toFixed(0) }}
-                </button>
-              </div>
-              <div class="flex gap-2">
-                <input
-                  v-model.number="customTopupAmount"
-                  type="number"
-                  min="5"
-                  max="500"
-                  placeholder="Custom amount ($)"
-                  class="input-material flex-1 text-sm"
-                />
-                <button
-                  @click="handleCustomTopup"
-                  :disabled="isBuyingCredits || !customTopupAmount || customTopupAmount < 5"
-                  class="btn-material px-4 py-2 text-sm font-semibold"
-                  :style="
-                    !customTopupAmount || customTopupAmount < 5
-                      ? 'opacity: 0.5; cursor: not-allowed;'
-                      : 'background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);'
-                  "
-                >
-                  Buy
-                </button>
-              </div>
-            </template>
-            <div
-              v-else
-              class="rounded-md p-3"
-              style="background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.3)"
-            >
-              <p class="text-xs font-medium" style="color: rgb(249, 115, 22)">
-                Upgrade to Pro or Max to purchase prepaid credits.
-              </p>
+            <div class="flex gap-2 mb-3">
+              <button
+                v-for="amount in [500, 1000, 2000]"
+                :key="amount"
+                @click="handleBuyCredits(amount)"
+                :disabled="isBuyingCredits"
+                class="btn-material px-4 py-2 text-sm font-semibold flex-1"
+              >
+                ${{ (amount / 100).toFixed(0) }}
+              </button>
+            </div>
+            <div class="flex gap-2">
+              <input
+                v-model.number="customTopupAmount"
+                type="number"
+                min="5"
+                max="500"
+                placeholder="Custom amount ($)"
+                class="input-material flex-1 text-sm"
+              />
+              <button
+                @click="handleCustomTopup"
+                :disabled="isBuyingCredits || !customTopupAmount || customTopupAmount < 5"
+                class="btn-material px-4 py-2 text-sm font-semibold"
+                :style="
+                  !customTopupAmount || customTopupAmount < 5
+                    ? 'opacity: 0.5; cursor: not-allowed;'
+                    : 'background: var(--color-primary-muted); color: var(--color-primary); border-color: var(--color-primary);'
+                "
+              >
+                Buy
+              </button>
             </div>
           </div>
 

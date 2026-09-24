@@ -166,8 +166,12 @@ export function useChatPanel(
   function addModelSlot() {
     if (selectedModelIds.value.length < subscription.maxModelsPerPrompt.value) {
       const usedIds = new Set(selectedModelIds.value);
+      // Never auto-pick a model that would spend one of the free trial messages.
       const nextModel = subscription.availableModels.value.find(
-        (m) => !usedIds.has(m.id) && subscription.canAccessModel(m)
+        (m) =>
+          !usedIds.has(m.id) &&
+          subscription.canAccessModel(m) &&
+          !subscription.isTrialCategory(m.category)
       );
       if (nextModel) {
         selectedModelIds.value = [...selectedModelIds.value, nextModel.id];

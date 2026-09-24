@@ -38,6 +38,36 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierConfig> = {
 
 export const MARKUP_MULTIPLIER = 1.5;
 
+/** Free-tier users get this many one-time messages with standard/premium models. */
+export const PREMIUM_TRIAL_MESSAGES = 3;
+
+export type ModelAccess =
+  | { allowed: true; via: 'tier' | 'prepaid' | 'trial' }
+  | { allowed: false };
+
+/**
+ * Decide whether a user may use a model category.
+ *
+ * - The tier's own categories are always allowed.
+ * - Any prepaid (pay-as-you-go) balance unlocks every category: usage is
+ *   billed per token at MARKUP_MULTIPLIER, so it is priced for.
+ * - Otherwise standard and premium (not frontier) models are allowed for a
+ *   small one-time trial, so free users can feel the difference.
+ */
+export function resolveModelAccess(
+  tier: SubscriptionTier,
+  category: ModelCategory,
+  prepaidCredits: number,
+  premiumTrialUsed: number
+): ModelAccess {
+  if (tierCanAccessCategory(tier, category)) return { allowed: true, via: 'tier' };
+  if (prepaidCredits > 0) return { allowed: true, via: 'prepaid' };
+  if (category !== 'frontier' && premiumTrialUsed < PREMIUM_TRIAL_MESSAGES) {
+    return { allowed: true, via: 'trial' };
+  }
+  return { allowed: false };
+}
+
 /** Check if a tier can access a model category */
 export function tierCanAccessCategory(
   tier: SubscriptionTier,

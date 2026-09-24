@@ -23,6 +23,7 @@ export interface UserBalance {
   total: number; // cents
   tier: SubscriptionTier;
   currentPeriodEnd: number | null; // epoch ms
+  premiumTrialRemaining?: number; // free standard/premium messages left
 }
 
 export interface UsageMetadata {

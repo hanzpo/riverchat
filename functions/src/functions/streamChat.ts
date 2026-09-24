@@ -2,7 +2,7 @@ import { onRequest, type Request } from 'firebase-functions/v2/https';
 import type { Response } from 'express';
 import { verifyAuth, AuthError } from '../middleware/auth.js';
 import { getModelConfig, calculateCostCents } from '../config/models.js';
-import { tierCanAccessCategory, TIER_CONFIGS } from '../config/tiers.js';
+import { resolveModelAccess, TIER_CONFIGS } from '../config/tiers.js';
 import {
   getBalance,
   reserveCredits,
@@ -11,6 +11,7 @@ import {
   InsufficientBalanceError,
   type CreditReservation,
   type DeductionResult,
+  consumePremiumTrial,
 } from '../services/credits.js';
 import { recordUsage } from '../services/usage.js';
 import {
@@ -227,15 +228,38 @@ async function handleStreamRequest(
     return;
   }
 
-  if (!tierCanAccessCategory(balance.tier, modelConfig.category)) {
+  const access = resolveModelAccess(
+    balance.tier,
+    modelConfig.category,
+    balance.prepaidCredits,
+    balance.premiumTrialUsed
+  );
+  const denyAccess = () => {
     const tierConfig = TIER_CONFIGS[balance.tier];
     res.status(403).json({
-      error: `Your ${balance.tier} plan does not include ${modelConfig.category} models. Upgrade to access ${modelConfig.displayName}.`,
+      error: `Your ${balance.tier} plan does not include ${modelConfig.category} models. Buy credits or upgrade to access ${modelConfig.displayName}.`,
       requiredAccess: modelConfig.category,
       currentTier: balance.tier,
       allowedCategories: tierConfig.modelAccess,
+      canBuyCredits: true,
     });
+  };
+  if (!access.allowed) {
+    denyAccess();
     return;
+  }
+  if (access.via === 'trial') {
+    let consumed = false;
+    try {
+      consumed = await consumePremiumTrial(uid);
+    } catch {
+      res.status(500).json({ error: 'Failed to update trial usage' });
+      return;
+    }
+    if (!consumed) {
+      denyAccess();
+      return;
+    }
   }
 
   // 6. Check web search access

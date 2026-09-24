@@ -95,7 +95,7 @@
           </div>
           <div class="flex items-center gap-2 text-xs" style="color: var(--color-text-secondary)">
             <PhCheck :size="14" style="color: var(--color-success); flex-shrink: 0" />
-            <span>Unlock credit top-ups</span>
+            <span>Buy pay-as-you-go credits</span>
           </div>
         </div>
       </div>

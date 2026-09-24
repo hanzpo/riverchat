@@ -9,6 +9,7 @@ import {
   callCreatePortalSession,
 } from '../services/cloud-functions';
 import { FALLBACK_MODELS } from '../config/models';
+import { AuthService } from '../services/auth';
 
 // Global subscription state
 const tier = ref<SubscriptionTier>('free');
@@ -18,6 +19,11 @@ const currentPeriodEnd = ref<number | null>(null);
 const availableModels = ref<LLMModel[]>(FALLBACK_MODELS);
 const isLoadingBalance = ref(false);
 const isLoadingModels = ref(false);
+const premiumTrialRemaining = ref(0);
+/** Set when an anonymous user tries to buy credits; App.vue opens sign-up. */
+const authRequiredForPurchase = ref(false);
+/** Credit purchase to resume once the user has signed up. */
+const pendingCreditPurchase = ref<number | null>(null);
 
 export function useSubscription() {
   const totalBalance = computed(() => subscriptionCredits.value + prepaidCredits.value);
@@ -41,9 +47,27 @@ export function useSubscription() {
 
   const tierOrder: Record<SubscriptionTier, number> = { free: 0, pro: 1, max: 2 };
 
-  function canAccessCategory(category: ModelCategory): boolean {
+  /** Whether the plan itself includes a category (ignores credits and trial). */
+  function tierIncludesCategory(category: ModelCategory): boolean {
     const requiredTier = CATEGORY_MIN_TIER[category];
     return tierOrder[tier.value] >= tierOrder[requiredTier];
+  }
+
+  /** Mirrors resolveModelAccess() on the server. */
+  function canAccessCategory(category: ModelCategory): boolean {
+    if (tierIncludesCategory(category)) return true;
+    if (prepaidCredits.value > 0) return true;
+    return category !== 'frontier' && premiumTrialRemaining.value > 0;
+  }
+
+  /** True when a category is only available through the free trial. */
+  function isTrialCategory(category: ModelCategory): boolean {
+    return (
+      !tierIncludesCategory(category) &&
+      prepaidCredits.value <= 0 &&
+      category !== 'frontier' &&
+      premiumTrialRemaining.value > 0
+    );
   }
 
   function canAccessModel(model: LLMModel): boolean {
@@ -76,6 +100,7 @@ export function useSubscription() {
       subscriptionCredits.value = balance.subscriptionCredits;
       prepaidCredits.value = balance.prepaidCredits;
       currentPeriodEnd.value = balance.currentPeriodEnd;
+      premiumTrialRemaining.value = balance.premiumTrialRemaining ?? 0;
     } catch (error) {
       console.error('[Subscription] Failed to refresh balance:', error);
     } finally {
@@ -119,6 +144,13 @@ export function useSubscription() {
 
   /** Redirect to Stripe Checkout for credit top-up */
   async function buyCredits(amountCents: number): Promise<void> {
+    if (AuthService.isAnonymous()) {
+      // Credits must belong to a real account; resume after sign-up.
+      pendingCreditPurchase.value = amountCents;
+      authRequiredForPurchase.value = true;
+      return;
+    }
+    pendingCreditPurchase.value = null;
     const url = await callCreateTopupCheckout(amountCents);
     window.location.href = url;
   }
@@ -138,6 +170,9 @@ export function useSubscription() {
     availableModels,
     isLoadingBalance,
     isLoadingModels,
+    premiumTrialRemaining,
+    authRequiredForPurchase,
+    pendingCreditPurchase,
 
     // Computed
     totalBalance,
@@ -153,6 +188,8 @@ export function useSubscription() {
     // Methods
     canAccessCategory,
     canAccessModel,
+    tierIncludesCategory,
+    isTrialCategory,
     refreshBalance,
     refreshModels,
     applyUsageUpdate,

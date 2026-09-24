@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "seo:generate": "UPDATE_SEO=1 vitest run src/seo",
     "typecheck": "vue-tsc -b",
     "lint": "eslint src",
     "format": "prettier --write src index.html",
